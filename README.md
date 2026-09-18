@@ -4,6 +4,7 @@
 ![Kotlin](https://img.shields.io/badge/Kotlin-1.9.22-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)
 ![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)
 ![Room DB](https://img.shields.io/badge/Room%20Database-2.6.1-4285F4?style=for-the-badge&logo=sqlite&logoColor=white)
+![Gradle](https://img.shields.io/badge/Gradle-9.2.0-02303A?style=for-the-badge&logo=gradle&logoColor=white)
 ![Min SDK](https://img.shields.io/badge/Min%20SDK-26%20(Android%208.0)-orange?style=for-the-badge)
 ![Target SDK](https://img.shields.io/badge/Target%20SDK-34%20(Android%2014)-brightgreen?style=for-the-badge)
 
@@ -20,6 +21,7 @@ A modern, production-ready native Android application built with **Kotlin**, **J
 5. [Step-by-Step Installation & Build Guide](#-step-by-step-installation--build-guide)
    - [Method 1: Using Android Studio IDE](#method-1-using-android-studio-ide)
    - [Method 2: Using Command Line (Gradle Wrapper)](#method-2-using-command-line-gradle-wrapper)
+   - [Setting local.properties for SDK Path](#setting-localproperties-for-sdk-path)
 6. [Core Technical Implementations](#-core-technical-implementations)
    - [1. Room Database Schema & DAOs](#1-room-database-schema--daos)
    - [2. Notification & Exact Alarm Subsystem](#2-notification--exact-alarm-subsystem)
@@ -92,7 +94,7 @@ Before starting, ensure your local development system satisfies the following ha
 
 ### Required Tools & Versions
 1. **Operating System**: Windows 10/11, macOS (Intel/Apple Silicon), or Linux.
-2. **Java Development Kit (JDK)**: OpenJDK 17 or Oracle JDK 17 (Required by Android Gradle Plugin 8.2+).
+2. **Java Development Kit (JDK)**: OpenJDK 17 / 21 / 26 or Oracle JDK (Required by Android Gradle Plugin 8.2+).
 3. **Android Studio**: Android Studio Hedgehog (2023.1.1) or higher (Iguana, Jellyfish, Ladybug, or Koala).
 4. **Android SDK**:
    - `compileSdk`: **34** (Android 14)
@@ -122,13 +124,17 @@ export PATH=$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/tools
 ```
 c:\simple-app\
 ├── README.md                           # Comprehensive Developer & Setup Guide
+├── gradlew.bat                         # Windows Gradle Wrapper script
+├── gradlew                             # Linux/macOS Gradle Wrapper script
 ├── build.gradle.kts                    # Root project Gradle configuration
 ├── settings.gradle.kts                 # Plugin & repository management settings
 ├── gradle.properties                   # JVM memory & AndroidX flags
+├── local.properties                    # Android SDK path configuration (create if needed)
 ├── gradle/
 │   ├── libs.versions.toml              # Centralized Version Catalog dependencies
 │   └── wrapper/
-│       └── gradle-wrapper.properties   # Gradle 8.4 wrapper distribution spec
+│       ├── gradle-wrapper.jar          # Gradle wrapper executable binary
+│       └── gradle-wrapper.properties   # Gradle 9.2.0 wrapper distribution spec
 └── app/
     ├── build.gradle.kts                # App module build config & dependencies
     ├── proguard-rules.pro              # Proguard obfuscation & keep rules
@@ -148,7 +154,7 @@ c:\simple-app\
         │   │   │   │   │   ├── GoalEntity.kt       # Room Entity for goal definitions
         │   │   │   │   │   └── GoalCompletionEntity.kt # Room Entity for completion logs
         │   │   │   │   └── preferences/
-        │   │   │   │       └── PreferencesManager.kt # SharedPreferences wrapper
+        │   │   │       └── PreferencesManager.kt # SharedPreferences wrapper
         │   │   │   ├── model/
         │   │   │   │   ├── GoalCategory.kt         # Enum with colors, icons & defaults
         │   │   │   │   ├── RepeatSchedule.kt       # Bitmask repeat days helper
@@ -214,7 +220,7 @@ c:\simple-app\
 
 ## 🔨 Step-by-Step Installation & Build Guide
 
-### Method 1: Using Android Studio IDE
+### Method 1: Using Android Studio IDE (Recommended)
 
 1. **Clone or Open the Repository**:
    Launch Android Studio, click **Open**, and navigate to the project directory:
@@ -223,10 +229,10 @@ c:\simple-app\
    ```
 
 2. **Sync Project with Gradle Files**:
-   Android Studio will automatically detect Gradle files. If prompted, click **Sync Now** or choose `File -> Sync Project with Gradle Files` from the top menu bar.
+   Android Studio will automatically detect Gradle files and download Android SDK 34 automatically. Click **Sync Now** if prompted.
 
 3. **Set Up an Android Emulator or Connect a Physical Device**:
-   - **Emulator**: Open `Tools -> Device Manager`, create a Virtual Device (e.g. Pixel 7 running API level 34).
+   - **Emulator**: Open `Tools -> Device Manager`, create a Virtual Device (e.g., Pixel 7 running API level 34).
    - **Physical Device**: Enable **Developer Options** and **USB Debugging** on your Android phone, then connect it via USB.
 
 4. **Run the Application**:
@@ -236,7 +242,7 @@ c:\simple-app\
 
 ### Method 2: Using Command Line (Gradle Wrapper)
 
-If you prefer building directly from PowerShell or Terminal:
+If building from PowerShell or Terminal without Android Studio GUI:
 
 1. **Navigate to Project Directory**:
    ```bash
@@ -244,42 +250,58 @@ If you prefer building directly from PowerShell or Terminal:
    ```
 
 2. **Clean Project**:
-   ```bash
+   ```powershell
    # Windows PowerShell
-   .\gradlew clean
+   .\gradlew.bat clean
 
    # macOS / Linux
    ./gradlew clean
    ```
 
 3. **Compile and Build Debug APK**:
-   ```bash
+   ```powershell
    # Windows PowerShell
-   .\gradlew assembleDebug
+   .\gradlew.bat assembleDebug
 
    # macOS / Linux
    ./gradlew assembleDebug
    ```
-   *The compiled APK file will be generated at:*
+   *The compiled Debug APK file will be generated at:*  
    `app/build/outputs/apk/debug/app-debug.apk`
 
 4. **Install APK to Connected Device/Emulator**:
-   ```bash
+   ```powershell
    # Windows PowerShell
-   .\gradlew installDebug
+   .\gradlew.bat installDebug
 
    # macOS / Linux
    ./gradlew installDebug
    ```
 
 5. **Execute Unit Test Suite**:
-   ```bash
+   ```powershell
    # Windows PowerShell
-   .\gradlew test
+   .\gradlew.bat test
 
    # macOS / Linux
    ./gradlew test
    ```
+
+---
+
+### Setting `local.properties` for SDK Path
+
+If command line builds output `SDK location not found`, create a file named `local.properties` in the root folder `c:\simple-app\local.properties` specifying your local Android SDK location:
+
+#### Windows Example (`local.properties`):
+```properties
+sdk.dir=C:/Users/YourUsername/AppData/Local/Android/Sdk
+```
+
+#### macOS / Linux Example (`local.properties`):
+```properties
+sdk.dir=/Users/YourUsername/Library/Android/sdk
+```
 
 ---
 
@@ -415,7 +437,7 @@ The project includes unit tests located under `app/src/test/java/com/dailygoal/r
 ### Running Unit Tests:
 From Terminal or PowerShell:
 ```powershell
-.\gradlew test
+.\gradlew.bat test
 ```
 
 ### What is Tested:
@@ -427,16 +449,17 @@ From Terminal or PowerShell:
 
 ## ❓ Troubleshooting & FAQs
 
-### 1. Notifications are not firing on Android 13 or Android 14.
-- **Cause**: Android 13 (API 33+) requires runtime permission `Manifest.permission.POST_NOTIFICATIONS`. Android 14 also imposes exact alarm restrictions.
-- **Fix**: Open app Settings or device `Settings -> Apps -> Daily Goal & Reminder -> Permissions` and enable **Notifications** and **Alarms & Reminders**.
+### 1. Gradle download timeout error during `.\gradlew` execution.
+- **Cause**: Default Gradle wrapper download timeout (10,000ms) interrupted remote zip download.
+- **Fix**: Updated [`gradle/wrapper/gradle-wrapper.properties`](file:///c:/simple-app/gradle/wrapper/gradle-wrapper.properties) to use local pre-cached Gradle 9.2.0.
 
-### 2. Notifications stop working after MIUI / Samsung battery saver kills background tasks.
-- **Cause**: OEM battery optimizations suppress exact alarms.
-- **Fix**: Grant **Unrestricted Battery Usage** in device Settings -> Apps -> Daily Goal & Reminder -> Battery.
+### 2. `SDK location not found` error.
+- **Cause**: `local.properties` file or `ANDROID_HOME` environment variable is missing.
+- **Fix**: Create `c:\simple-app\local.properties` and add: `sdk.dir=C:/Users/YourUsername/AppData/Local/Android/Sdk` (or open the project once in Android Studio to generate it automatically).
 
-### 3. How to add new pre-configured categories?
-- Simply update the `GoalCategory` enum in [`GoalCategory.kt`](file:///c:/simple-app/app/src/main/java/com/dailygoal/reminder/data/model/GoalCategory.kt) with a new entry, color hex, and default unit.
+### 3. Notifications are not firing on Android 13 or Android 14.
+- **Cause**: Android 13 (API 33+) requires runtime permission `Manifest.permission.POST_NOTIFICATIONS`.
+- **Fix**: Open device `Settings -> Apps -> Daily Goal & Reminder -> Permissions` and enable **Notifications** and **Alarms & Reminders**.
 
 ---
 
