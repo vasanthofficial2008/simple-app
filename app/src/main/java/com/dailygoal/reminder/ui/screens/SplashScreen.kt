@@ -77,16 +77,16 @@ fun SplashScreen(
             }
             Spacer(modifier = Modifier.height(20.dp))
             Text(
-                text = "Daily Goal & Reminder",
-                style = MaterialTheme.typography.headlineMedium,
+                text = "Aimly",
+                style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Track habits • Build streaks • Stay on schedule",
+                text = "Daily Goals • Habit Streaks • Smart Reminders",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = 0.8f)
+                color = Color.White.copy(alpha = 0.85f)
             )
         }
     }

@@ -1,7 +1,11 @@
 package com.dailygoal.reminder.ui.screens
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import android.app.AlarmManager
+import android.content.Context
+import android.content.Intent
+import android.os.Build
+import android.provider.Settings
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,7 +19,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -35,14 +42,16 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.dailygoal.reminder.notification.NotificationHelper
+import com.dailygoal.reminder.ui.theme.ExerciseRed
 import com.dailygoal.reminder.ui.theme.PrimaryIndigo
 import com.dailygoal.reminder.ui.viewmodel.GoalViewModel
 
@@ -53,10 +62,18 @@ fun NotificationSettingsScreen(
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
     val isGlobalEnabled by viewModel.globalNotifications.collectAsState()
     val snoozeMinutes by viewModel.snoozeDuration.collectAsState()
 
     val snoozeOptions = listOf(5, 10, 30, 60)
+
+    val alarmManager = remember { context.getSystemService(Context.ALARM_SERVICE) as AlarmManager }
+    val canScheduleExact = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        alarmManager.canScheduleExactAlarms()
+    } else {
+        true
+    }
 
     Scaffold(
         topBar = {
@@ -94,12 +111,12 @@ fun NotificationSettingsScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Global Push Reminders",
+                            text = "Global Goal Reminders",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Master toggle for all scheduled goal alerts",
+                            text = "Master switch for scheduled local goal alerts",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
@@ -109,6 +126,61 @@ fun NotificationSettingsScreen(
                         onCheckedChange = { viewModel.setGlobalNotifications(it) },
                         colors = SwitchDefaults.colors(checkedThumbColor = PrimaryIndigo)
                     )
+                }
+            }
+
+            // Exact Alarm Access Card (Android 12+)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (canScheduleExact) {
+                            MaterialTheme.colorScheme.surface
+                        } else {
+                            ExerciseRed.copy(alpha = 0.1f)
+                        }
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Alarm,
+                                contentDescription = "Exact Alarms",
+                                tint = if (canScheduleExact) PrimaryIndigo else ExerciseRed
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "Exact Alarm Permission",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = if (canScheduleExact) {
+                                "Exact alarm access is active. Scheduled reminders trigger precisely at requested times."
+                            } else {
+                                "Exact alarm access is disabled by Android. Reminders will fallback to approximate delivery unless permission is granted."
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+
+                        if (!canScheduleExact) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Button(
+                                onClick = {
+                                    val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                                    context.startActivity(intent)
+                                },
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = ExerciseRed)
+                            ) {
+                                Text("Open System Alarm Settings", fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
                 }
             }
 
@@ -126,7 +198,7 @@ fun NotificationSettingsScreen(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "When you snooze a reminder notification from the lock screen",
+                        text = "When you tap Snooze on a goal reminder",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
@@ -164,6 +236,55 @@ fun NotificationSettingsScreen(
                 }
             }
 
+            // FCM Push Token Status Card
+            val fcmToken = viewModel.prefsManager.fcmToken
+            Card(
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.CloudDone,
+                            contentDescription = "FCM Token",
+                            tint = PrimaryIndigo
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = "Firebase Cloud Messaging (FCM)",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = if (fcmToken != null) {
+                            "FCM Push Registration Token active."
+                        } else {
+                            "FCM registration token pending initialization."
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+
+                    if (fcmToken != null) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        OutlinedButton(
+                            onClick = {
+                                clipboardManager.setText(AnnotatedString(fcmToken))
+                                Toast.makeText(context, "FCM Token copied to clipboard!", Toast.LENGTH_SHORT).show()
+                            },
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(imageVector = Icons.Default.ContentCopy, contentDescription = "Copy Token")
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Copy FCM Token")
+                        }
+                    }
+                }
+            }
+
             // Test Notification Trigger Card
             Card(
                 shape = RoundedCornerShape(20.dp),
@@ -179,7 +300,7 @@ fun NotificationSettingsScreen(
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = "Test Scheduled Notification",
+                            text = "Test Local & Push Alert",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = PrimaryIndigo
@@ -187,7 +308,7 @@ fun NotificationSettingsScreen(
                     }
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "Trigger a sample reminder push notification right now to preview lock screen alert & snooze actions.",
+                        text = "Trigger a sample Aimly goal reminder notification right now.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )

@@ -1,5 +1,9 @@
 <resources>
-    <string name="app_name">Daily Goal &amp; Reminder</string>
-    <string name="notification_channel_name">Daily Goal Reminders</string>
-    <string name="notification_channel_desc">Notifications for scheduled daily goals and habits</string>
+    <string name="app_name">Aimly</string>
+    <string name="notification_channel_name">Aimly Goal Reminders</string>
+    <string name="notification_channel_desc">Personal notifications for scheduled daily goals and habits in Aimly</string>
+    <string name="notification_channel_updates_name">Aimly Updates &amp; Announcements</string>
+    <string name="notification_channel_updates_desc">Product updates, announcements, and news from Aimly</string>
+    <string name="notification_channel_promotions_name">Aimly Challenges &amp; Motivation</string>
+    <string name="notification_channel_promotions_desc">Weekly challenges, motivation, and tips from Aimly</string>
 </resources>

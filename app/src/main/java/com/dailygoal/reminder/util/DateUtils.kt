@@ -6,30 +6,30 @@ import java.util.Date
 import java.util.Locale
 
 object DateUtils {
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-    private val displayDateFormat = SimpleDateFormat("EEEE, MMMM d", Locale.getDefault())
-    private val shortMonthDayFormat = SimpleDateFormat("MMM d", Locale.getDefault())
-    private val monthYearFormat = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
+    
+    private fun getIsoDateFormat(): SimpleDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+    private fun getDisplayDateFormat(): SimpleDateFormat = SimpleDateFormat("EEEE, MMMM d", Locale.getDefault())
+    private fun getMonthYearFormat(): SimpleDateFormat = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
 
     fun getTodayDateString(): String {
-        return dateFormat.format(Date())
+        return getIsoDateFormat().format(Date())
     }
 
     fun formatDateForDisplay(dateString: String): String {
         return try {
-            val date = dateFormat.parse(dateString)
-            if (date != null) displayDateFormat.format(date) else dateString
+            val date = getIsoDateFormat().parse(dateString)
+            if (date != null) getDisplayDateFormat().format(date) else dateString
         } catch (e: Exception) {
             dateString
         }
     }
 
     fun getTodayFormattedHeader(): String {
-        return displayDateFormat.format(Date())
+        return getDisplayDateFormat().format(Date())
     }
 
     fun getMonthYearFormatted(calendar: Calendar): String {
-        return monthYearFormat.format(calendar.time)
+        return getMonthYearFormat().format(calendar.time)
     }
 
     fun getDayOfWeekBitmask(calendar: Calendar = Calendar.getInstance()): Int {
@@ -56,12 +56,13 @@ object DateUtils {
     fun calculateStreak(completedDates: List<String>): Int {
         if (completedDates.isEmpty()) return 0
         val sortedDates = completedDates.distinct().sortedDescending()
+        val isoFormat = getIsoDateFormat()
 
         val cal = Calendar.getInstance()
-        val todayStr = dateFormat.format(cal.time)
+        val todayStr = isoFormat.format(cal.time)
 
         cal.add(Calendar.DAY_OF_YEAR, -1)
-        val yesterdayStr = dateFormat.format(cal.time)
+        val yesterdayStr = isoFormat.format(cal.time)
 
         // Check if user completed today or yesterday to maintain current streak
         if (!sortedDates.contains(todayStr) && !sortedDates.contains(yesterdayStr)) {
@@ -75,7 +76,7 @@ object DateUtils {
         }
 
         while (true) {
-            val dateStr = dateFormat.format(checkCal.time)
+            val dateStr = isoFormat.format(checkCal.time)
             if (sortedDates.contains(dateStr)) {
                 streak++
                 checkCal.add(Calendar.DAY_OF_YEAR, -1)
@@ -90,8 +91,9 @@ object DateUtils {
     fun getPastDays(daysCount: Int): List<String> {
         val list = mutableListOf<String>()
         val cal = Calendar.getInstance()
+        val isoFormat = getIsoDateFormat()
         for (i in 0 until daysCount) {
-            list.add(dateFormat.format(cal.time))
+            list.add(isoFormat.format(cal.time))
             cal.add(Calendar.DAY_OF_YEAR, -1)
         }
         return list.reversed()

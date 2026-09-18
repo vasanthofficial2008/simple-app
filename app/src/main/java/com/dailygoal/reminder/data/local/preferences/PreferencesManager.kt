@@ -31,6 +31,26 @@ class PreferencesManager(context: Context) {
         get() = prefs.getString(KEY_THEME_MODE, "SYSTEM") ?: "SYSTEM"
         set(value) = prefs.edit().putString(KEY_THEME_MODE, value).apply()
 
+    var fcmToken: String?
+        get() = prefs.getString(KEY_FCM_TOKEN, null)
+        set(value) = prefs.edit().putString(KEY_FCM_TOKEN, value).apply()
+
+    var fcmTokenLastUpdated: Long
+        get() = prefs.getLong(KEY_FCM_TOKEN_LAST_UPDATED, 0L)
+        set(value) = prefs.edit().putLong(KEY_FCM_TOKEN_LAST_UPDATED, value).apply()
+
+    var isRemoteNotificationsEnabled: Boolean
+        get() = prefs.getBoolean(KEY_REMOTE_NOTIFICATIONS, true)
+        set(value) = prefs.edit().putBoolean(KEY_REMOTE_NOTIFICATIONS, value).apply()
+
+    var isAnnouncementsTopicSubscribed: Boolean
+        get() = prefs.getBoolean(KEY_TOPIC_ANNOUNCEMENTS, true)
+        set(value) = prefs.edit().putBoolean(KEY_TOPIC_ANNOUNCEMENTS, value).apply()
+
+    var isChallengesTopicSubscribed: Boolean
+        get() = prefs.getBoolean(KEY_TOPIC_CHALLENGES, true)
+        set(value) = prefs.edit().putBoolean(KEY_TOPIC_CHALLENGES, value).apply()
+
     companion object {
         private const val KEY_ONBOARDING_COMPLETED = "onboarding_completed"
         private const val KEY_GLOBAL_NOTIFICATIONS = "global_notifications"
@@ -38,5 +58,10 @@ class PreferencesManager(context: Context) {
         private const val KEY_SOUND_ENABLED = "sound_enabled"
         private const val KEY_VIBRATION_ENABLED = "vibration_enabled"
         private const val KEY_THEME_MODE = "theme_mode"
+        private const val KEY_FCM_TOKEN = "fcm_token"
+        private const val KEY_FCM_TOKEN_LAST_UPDATED = "fcm_token_last_updated"
+        private const val KEY_REMOTE_NOTIFICATIONS = "remote_notifications"
+        private const val KEY_TOPIC_ANNOUNCEMENTS = "topic_announcements"
+        private const val KEY_TOPIC_CHALLENGES = "topic_challenges"
     }
 }

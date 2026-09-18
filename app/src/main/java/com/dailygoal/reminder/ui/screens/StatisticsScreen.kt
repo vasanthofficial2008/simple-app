@@ -27,6 +27,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,7 +58,7 @@ fun StatisticsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Statistics & Insights",
+                        text = "Progress Statistics",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -82,96 +83,100 @@ fun StatisticsScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Streaks Overview Row
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            // Overview Streaks Card
+            Card(
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = PrimaryIndigo),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Current Streak Card
-                Card(
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = WarningOrange.copy(alpha = 0.12f)),
-                    modifier = Modifier.weight(1f)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(
-                        modifier = Modifier.padding(18.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(text = "🔥", fontSize = 32.sp)
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = "${stats.currentStreak} Days",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = WarningOrange
-                        )
+                    Column {
                         Text(
                             text = "Current Streak",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color.White.copy(alpha = 0.8f)
                         )
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text(
+                                text = "${stats.currentStreak}",
+                                style = MaterialTheme.typography.displayLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "days 🔥",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = Color.White.copy(alpha = 0.9f),
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                        }
                     }
-                }
 
-                // Total Days Logged Card
-                Card(
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = PrimaryIndigo.copy(alpha = 0.12f)),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(18.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(70.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color.White.copy(alpha = 0.2f))
                     ) {
-                        Text(text = "🏆", fontSize = 32.sp)
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = "${completedDates.size} Days",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = PrimaryIndigo
-                        )
-                        Text(
-                            text = "Total Active Days",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        )
+                        Text(text = "🔥", fontSize = 36.sp)
                     }
                 }
             }
 
-            // Today's Completion Percentage Card
+            // Today Completion Progress Bar Card
             Card(
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
-                    Text(
-                        text = "Today's Rate: ${stats.todayCompletionPercentage}%",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Today Completion",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${stats.todayCompletionPercentage}%",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = PrimaryIndigo
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
                     LinearProgressIndicator(
                         progress = { stats.todayCompletionPercentage / 100f },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(10.dp)
-                            .clip(RoundedCornerShape(5.dp)),
-                        color = SuccessGreen,
-                        trackColor = SuccessGreen.copy(alpha = 0.15f)
+                            .height(12.dp)
+                            .clip(RoundedCornerShape(6.dp)),
+                        color = PrimaryIndigo,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Spacer(modifier = Modifier.height(10.dp))
                     Text(
                         text = "${stats.completedTodayCount} out of ${stats.totalGoalsCount} daily goals completed today.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                 }
             }
 
-            // Weekly Habit Tracker Bar Chart
+            // Last 7 Days Visual Progress Card
             Card(
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -196,6 +201,8 @@ fun StatisticsScreen(
                             val barHeight = if (isDone) 80.dp else 24.dp
                             val barColor = if (isDone) SecondaryTeal else MaterialTheme.colorScheme.surfaceVariant
 
+                            val dateLabel = if (dateStr.length >= 2) dateStr.substring(dateStr.length - 2) else dateStr
+
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Bottom
@@ -209,7 +216,7 @@ fun StatisticsScreen(
                                 )
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Text(
-                                    text = dateStr.takeLast(2),
+                                    text = dateLabel,
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                 )
@@ -219,7 +226,7 @@ fun StatisticsScreen(
                 }
             }
 
-            item { Spacer(modifier = Modifier.height(80.dp)) }
+            Spacer(modifier = Modifier.height(80.dp))
         }
     }
 }

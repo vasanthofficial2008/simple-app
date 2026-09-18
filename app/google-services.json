@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "764871488597",
+    "project_id": "aimly-50e51",
+    "storage_bucket": "aimly-50e51.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:764871488597:android:05d7c3f698561dcc71d0dc",
+        "android_client_info": {
+          "package_name": "com.dailygoal.reminder"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCSf-4c3BvxmlfjyUYiNOWMSsyII3CEL5g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

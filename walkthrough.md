@@ -1,121 +1,103 @@
-# Daily Goal & Reminder - Android App Walkthrough
+# Walkthrough — Aimly: Complete Production / Play Store / FCM Upgrade
 
-The **Daily Goal & Reminder** app is a modern, production-ready Android application designed to help users establish daily habits, set custom goals, track progress & streaks, and receive exact scheduled local push notifications (even when the app is minimized, closed, or after device reboot).
-
----
-
-## 📱 App Highlights & Architecture
-
-### 1. Technology Stack
-- **Language**: Kotlin 1.9.22
-- **UI Framework**: Jetpack Compose with Material 3 Design System
-- **Database**: Room Database (SQLite) with StateFlow / Coroutines
-- **Navigation**: Jetpack Navigation Compose
-- **Alarm & Notification Engine**: Android `AlarmManager` (`RTC_WAKEUP`), `NotificationManager`, `PendingIntent`, `BroadcastReceiver` (`BootReceiver`, `NotificationActionReceiver`, `SnoozeReceiver`)
-- **Target SDK**: Android 14 (API 34), Minimum SDK: API 26 (Android 8.0)
+The native Android application has been fully audited, upgraded, and transformed into **Aimly** — a production-ready daily goal, habit, streak, and reminder app prepared for Google Play Store release.
 
 ---
 
-## 📁 Code Base Directory Structure
+## 1. Summary of Accomplished Changes
 
-```
-c:\simple-app\
-├── build.gradle.kts
-├── settings.gradle.kts
-├── gradle.properties
-├── gradle/
-│   ├── libs.versions.toml (Gradle Version Catalog)
-│   └── wrapper/
-│       └── gradle-wrapper.properties
-└── app/
-    ├── build.gradle.kts
-    ├── proguard-rules.pro
-    └── src/
-        ├── main/
-        │   ├── AndroidManifest.xml
-        │   ├── java/com/dailygoal/reminder/
-        │   │   ├── DailyGoalApp.kt (Application Class & Notification Channel Init)
-        │   │   ├── MainActivity.kt (ComponentActivity with Theme State)
-        │   │   ├── data/
-        │   │   │   ├── local/
-        │   │   │   │   ├── AppDatabase.kt (Room Database & Initial Pre-populated Goals)
-        │   │   │   │   ├── dao/GoalDao.kt, GoalCompletionDao.kt
-        │   │   │   │   ├── entity/GoalEntity.kt, GoalCompletionEntity.kt
-        │   │   │   │   └── preferences/PreferencesManager.kt
-        │   │   │   ├── model/GoalCategory.kt, RepeatSchedule.kt, GoalWithProgress.kt, StatsSummary.kt
-        │   │   │   └── repository/GoalRepository.kt
-        │   │   ├── notification/
-        │   │   │   ├── AlarmScheduler.kt (AlarmManager scheduling & cancel routines)
-        │   │   │   ├── NotificationHelper.kt (Notification builder with actions)
-        │   │   │   ├── AlarmReceiver.kt (Alarm trigger broadcast receiver)
-        │   │   │   ├── BootReceiver.kt (Reschedules active alarms on phone reboot)
-        │   │   │   ├── NotificationActionReceiver.kt (Mark Done directly from notification bar)
-        │   │   │   └── SnoozeReceiver.kt (Snoozes reminders for 5m, 10m, 30m, 1h)
-        │   │   ├── ui/
-        │   │   │   ├── theme/ (Color.kt, Type.kt, Theme.kt - Material 3 Dark/Light)
-        │   │   │   ├── navigation/ (Screen.kt, NavGraph.kt)
-        │   │   │   ├── components/ (ProgressRing, GoalCard, CategoryChip, DaySelector, StreakBadge, BottomNavBar, ActionDialogs)
-        │   │   │   ├── viewmodel/GoalViewModel.kt
-        │   │   │   └── screens/
-        │   │   │       ├── SplashScreen.kt
-        │   │   │       ├── OnboardingScreen.kt
-        │   │   │       ├── HomeScreen.kt (Today's Checklist & Dashboard)
-        │   │   │       ├── AddEditGoalScreen.kt (Goal Creator & Editor)
-        │   │   │       ├── GoalDetailScreen.kt (Goal Performance & Controls)
-        │   │   │       ├── HistoryScreen.kt (Calendar View & Daily Logs)
-        │   │   │       ├── StatisticsScreen.kt (Streak Insights & Progress Charts)
-        │   │   │       ├── NotificationSettingsScreen.kt (Global Alerts, Snooze, Test Push)
-        │   │   │       └── SettingsScreen.kt (Theme Mode, Restore Defaults, Reset Data)
-        │   │   └── util/
-        │   │       ├── DateUtils.kt
-        │   │       ├── SmartMessageGenerator.kt
-        │   │       └── PermissionUtils.kt
-        │   └── res/
-        │       ├── drawable/ic_notification.xml
-        │       ├── values/strings.xml, colors.xml, themes.xml
-        │       └── xml/backup_rules.xml, data_extraction_rules.xml
-        └── test/java/com/dailygoal/reminder/DateUtilsTest.kt
-```
+### 🛠️ Phase 1: Build Infrastructure & Tooling Upgrade
+- **Gradle & AGP Compatibility**: Updated Gradle Wrapper to `8.9` and AGP to `8.7.3`, Kotlin to `2.0.20`, and KSP to `2.0.20-1.0.25` for full compatibility with Java 25 (`JBR 25.0.3`) and Target SDK `34`.
+- **Firebase BoM & Dependencies**: Added Firebase BoM `33.1.0`, `firebase-messaging`, `firebase-analytics`, and Google Services plugin `4.4.1`.
+- **Production Release Signing**: Configured `signingConfigs.release` in `app/build.gradle.kts` to read environment variables (`KEYSTORE_FILE`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`) with a safe fallback to debug signing if environment variables are omitted locally.
+- **R8 Minification & Optimization**: Enabled `isMinifyEnabled = true` and `isShrinkResources = true` with comprehensive keep rules in `app/proguard-rules.pro` for Room DB, Firebase, Coroutines, and Jetpack Compose.
 
 ---
 
-## 🚀 Key Features Implemented
-
-### 1. Scheduled Push Notifications & Lock Screen Actions
-- Uses `AlarmManager.setExactAndAllowWhileIdle()` to guarantee notification triggering even when device is in Doze mode or app is closed.
-- **Mark Done Action**: Users can complete a goal directly from the notification shade without opening the application.
-- **Snooze Action**: Re-schedules the alarm automatically for 5, 10, 30 minutes, or 1 hour based on user preferences.
-- **Boot Receiver**: Subscribes to `RECEIVE_BOOT_COMPLETED` so all active alarms are automatically restored when the phone restarts.
-
-### 2. Dashboard & Progress Tracking
-- **Animated Circular Progress Ring**: Displays real-time completion percentage.
-- **Streak Protection**: Calculates consecutive-day streaks (`🔥 5 Day Streak`) and total active completion days.
-- **Incremental Goal Support**: Goals like "Drink 2L Water" or "Read 10 Pages" support progressive increments (`+1`) towards daily completion.
-
-### 3. All 9 App Screens
-1. **Splash Screen**: Animated logo transition.
-2. **Onboarding Screen**: Carousel introduction and Android 13+ runtime notification permission request (`POST_NOTIFICATIONS`).
-3. **Home Screen**: Today's checklist, progress ring, streak badge, and upcoming reminder banner.
-4. **Add/Edit Goal Screen**: Category presets, custom target/units, time picker, and day repeat schedule selector.
-5. **Goal Detail Screen**: Comprehensive view, pause/resume toggle, edit, and delete options.
-6. **History Screen**: Interactive monthly calendar with daily completion logs.
-7. **Statistics Screen**: Streak breakdown, 7-day progress bar chart, and completion metrics.
-8. **Notification Settings**: Global toggle, default snooze duration picker, sound/vibration toggles, and "Send Test Notification Now" button.
-9. **Settings Screen**: Dark / Light / System theme selector, sample goal restorer, and complete data reset option.
+### 🎯 Phase 2: Branding Upgrade to "Aimly"
+- **App Label & Strings**: Updated `app_name` to **Aimly** and updated UI text across [SplashScreen.kt](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/ui/screens/SplashScreen.kt), [OnboardingScreen.kt](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/ui/screens/OnboardingScreen.kt), [SettingsScreen.kt](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/ui/screens/SettingsScreen.kt), and [strings.xml](file:///c:/ll/simple-app/app/src/main/res/values/strings.xml).
+- **Permanent Application ID**: Preserved `com.dailygoal.reminder` as the production package identifier to ensure database safety and prevent Play Store migration risks.
+- **Adaptive Launcher Icons**: Created vector drawables and adaptive XML resources ([ic_launcher.xml](file:///c:/ll/simple-app/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml), [ic_launcher_background.xml](file:///c:/ll/simple-app/app/src/main/res/drawable/ic_launcher_background.xml), [ic_launcher_foreground.xml](file:///c:/ll/simple-app/app/src/main/res/drawable/ic_launcher_foreground.xml)) featuring Aimly target branding.
 
 ---
 
-## 🛠️ How to Open and Run in Android Studio
-
-1. **Launch Android Studio** (Hedgehog 2023.1.1 or newer recommended).
-2. Click **Open** and select the root directory: `c:\simple-app`.
-3. Allow Gradle to sync dependencies.
-4. Select an Android Emulator or connected device running API 26 or higher.
-5. Click **Run 'app'** (`Shift + F10`).
+### ☁️ Phase 3: Firebase Cloud Messaging (FCM) Integration
+- **Token Management Repository**: Created [PushTokenRepository.kt](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/data/repository/PushTokenRepository.kt) to manage token retrieval, local caching, topic subscriptions (`aimly_all_users`, `aimly_updates`, `aimly_challenges`), and backend synchronization abstraction.
+- **Firebase Messaging Service**: Implemented [AimlyFirebaseMessagingService.kt](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/notification/AimlyFirebaseMessagingService.kt) to listen to `onNewToken` and `onMessageReceived`, validate payloads, and trigger notifications safely.
+- **Multi-Channel Separation**: Updated [NotificationHelper.kt](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/notification/NotificationHelper.kt) to establish distinct channels:
+  - `aimly_reminders_channel` (High Importance - Local Alarms)
+  - `aimly_updates_channel` (Default Importance - Product Announcements)
+  - `aimly_promotions_channel` (Default Importance - Challenges & Motivation)
 
 ---
 
-## 🧪 Verification Plan Completed
+### ⏰ Phase 4: Local Reminder System & Exact Alarm Hardening
+- **Exact Alarm Policy**: Audited [AlarmScheduler.kt](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/notification/AlarmScheduler.kt) and [AndroidManifest.xml](file:///c:/ll/simple-app/app/src/main/AndroidManifest.xml). Uses `SCHEDULE_EXACT_ALARM` with runtime check `canScheduleExactAlarms()` on Android 12+ (API 31+) and graceful fallback to `setAndAllowWhileIdle()`.
+- **System Settings Prompt**: Added exact alarm status card and button to open Android System Settings in [NotificationSettingsScreen.kt](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/ui/screens/NotificationSettingsScreen.kt).
+- **ISO Date & Thread Safety**: Hardened [DateUtils.kt](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/util/DateUtils.kt) to use `Locale.US` for `yyyy-MM-dd` date calculations across timezones and locales.
 
-- **Unit Tests**: Included in [`DateUtilsTest.kt`](file:///c:/simple-app/app/src/test/java/com/dailygoal/reminder/DateUtilsTest.kt) testing streak calculation algorithms, date formatting, and day-of-week bitmasks.
-- **Code Inspection**: Verified Kotlin syntax, Room Entity schemas, DAO queries, AlarmManager PendingIntents, and Manifest Broadcast Receivers.
+---
+
+### 🔗 Phase 5: Deep Linking & Intent Navigation
+- **Deep Link Handling**: Configured `aimly://` URI scheme in [AndroidManifest.xml](file:///c:/ll/simple-app/app/src/main/AndroidManifest.xml).
+- **MainActivity Routing**: Updated [MainActivity.kt](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/MainActivity.kt) to parse deep links (`aimly://home`, `aimly://goal/{id}`, `aimly://history`, `aimly://statistics`, `aimly://settings`) and navigate seamlessly upon notification tap.
+
+---
+
+### 📚 Phase 6: Documentation, Security & Play Store Assets
+- Created comprehensive documentation:
+  - [FIREBASE_SETUP.md](file:///c:/ll/simple-app/FIREBASE_SETUP.md)
+  - [PLAY_STORE_RELEASE.md](file:///c:/ll/simple-app/PLAY_STORE_RELEASE.md)
+  - [AIMLY_ARCHITECTURE.md](file:///c:/ll/simple-app/AIMLY_ARCHITECTURE.md)
+  - [PRIVACY_POLICY.md](file:///c:/ll/simple-app/PRIVACY_POLICY.md)
+  - [STORE_LISTING.md](file:///c:/ll/simple-app/STORE_LISTING.md)
+  - [.gitignore](file:///c:/ll/simple-app/.gitignore)
+
+---
+
+## 2. Verification Results
+
+| Verification Area | Target Command | Result | Output Artifact |
+| :--- | :--- | :--- | :--- |
+| **Unit Tests** | `./gradlew test` | **PASS** | `app/build/reports/tests/testDebugUnitTest/index.html` |
+| **Debug Build** | `./gradlew assembleDebug` | **PASS** | `app/build/outputs/apk/debug/app-debug.apk` |
+| **Release Bundle** | `./gradlew bundleRelease` | **PASS** | `app/build/outputs/bundle/release/app-release.aab` (Size: 4.46 MB) |
+
+---
+
+## 3. Summary of Files Created and Modified
+
+### New Files Created
+1. `app/google-services.json`
+2. `app/src/main/java/com/dailygoal/reminder/data/repository/PushTokenRepository.kt`
+3. `app/src/main/java/com/dailygoal/reminder/notification/AimlyFirebaseMessagingService.kt`
+4. `app/src/main/res/drawable/ic_launcher_background.xml`
+5. `app/src/main/res/drawable/ic_launcher_foreground.xml`
+6. `app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml`
+7. `app/src/test/java/com/dailygoal/reminder/FcmPayloadValidationTest.kt`
+8. `FIREBASE_SETUP.md`
+9. `PLAY_STORE_RELEASE.md`
+10. `AIMLY_ARCHITECTURE.md`
+11. `PRIVACY_POLICY.md`
+12. `STORE_LISTING.md`
+13. `.gitignore`
+
+### Existing Files Upgraded
+1. `gradle/wrapper/gradle-wrapper.properties`
+2. `gradle/libs.versions.toml`
+3. `build.gradle.kts`
+4. `app/build.gradle.kts`
+5. `gradle.properties`
+6. `app/proguard-rules.pro`
+7. `app/src/main/res/values/strings.xml`
+8. `app/src/main/AndroidManifest.xml`
+9. `app/src/main/java/com/dailygoal/reminder/DailyGoalApp.kt`
+10. `app/src/main/java/com/dailygoal/reminder/MainActivity.kt`
+11. `app/src/main/java/com/dailygoal/reminder/data/local/preferences/PreferencesManager.kt`
+12. `app/src/main/java/com/dailygoal/reminder/notification/NotificationHelper.kt`
+13. `app/src/main/java/com/dailygoal/reminder/util/DateUtils.kt`
+14. `app/src/main/java/com/dailygoal/reminder/ui/screens/SplashScreen.kt`
+15. `app/src/main/java/com/dailygoal/reminder/ui/screens/HomeScreen.kt`
+16. `app/src/main/java/com/dailygoal/reminder/ui/screens/SettingsScreen.kt`
+17. `app/src/main/java/com/dailygoal/reminder/ui/screens/NotificationSettingsScreen.kt`
+18. `app/src/main/java/com/dailygoal/reminder/ui/screens/StatisticsScreen.kt`
