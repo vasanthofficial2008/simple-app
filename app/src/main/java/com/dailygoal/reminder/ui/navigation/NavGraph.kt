@@ -1,11 +1,16 @@
 package com.dailygoal.reminder.ui.navigation
 
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.dailygoal.reminder.ui.animation.AimlyMotionSpecs
 import com.dailygoal.reminder.ui.screens.AddEditGoalScreen
 import com.dailygoal.reminder.ui.screens.GoalDetailScreen
 import com.dailygoal.reminder.ui.screens.HistoryScreen
@@ -22,11 +27,20 @@ fun NavGraph(
     navController: NavHostController,
     viewModel: GoalViewModel
 ) {
+    val slideEnter = fadeIn(AimlyMotionSpecs.contentTween()) + slideInHorizontally(AimlyMotionSpecs.contentTween()) { w -> w / 6 }
+    val slideExit = fadeOut(AimlyMotionSpecs.contentTween()) + slideOutHorizontally(AimlyMotionSpecs.contentTween()) { w -> -w / 6 }
+    val popSlideEnter = fadeIn(AimlyMotionSpecs.contentTween()) + slideInHorizontally(AimlyMotionSpecs.contentTween()) { w -> -w / 6 }
+    val popSlideExit = fadeOut(AimlyMotionSpecs.contentTween()) + slideOutHorizontally(AimlyMotionSpecs.contentTween()) { w -> w / 6 }
+
     NavHost(
         navController = navController,
         startDestination = Screen.Splash.route
     ) {
-        composable(Screen.Splash.route) {
+        composable(
+            route = Screen.Splash.route,
+            enterTransition = { slideEnter },
+            exitTransition = { slideExit }
+        ) {
             SplashScreen(
                 isOnboardingCompleted = viewModel.isOnboardingCompleted,
                 onNavigateNext = { route ->
@@ -37,7 +51,11 @@ fun NavGraph(
             )
         }
 
-        composable(Screen.Onboarding.route) {
+        composable(
+            route = Screen.Onboarding.route,
+            enterTransition = { slideEnter },
+            exitTransition = { slideExit }
+        ) {
             OnboardingScreen(
                 onFinishOnboarding = {
                     viewModel.setOnboardingCompleted()
@@ -48,7 +66,13 @@ fun NavGraph(
             )
         }
 
-        composable(Screen.Home.route) {
+        composable(
+            route = Screen.Home.route,
+            enterTransition = { slideEnter },
+            exitTransition = { slideExit },
+            popEnterTransition = { popSlideEnter },
+            popExitTransition = { popSlideExit }
+        ) {
             HomeScreen(
                 viewModel = viewModel,
                 onNavigateToAddGoal = { navController.navigate(Screen.AddGoal.route) },
@@ -57,7 +81,13 @@ fun NavGraph(
             )
         }
 
-        composable(Screen.AddGoal.route) {
+        composable(
+            route = Screen.AddGoal.route,
+            enterTransition = { slideEnter },
+            exitTransition = { slideExit },
+            popEnterTransition = { popSlideEnter },
+            popExitTransition = { popSlideExit }
+        ) {
             AddEditGoalScreen(
                 viewModel = viewModel,
                 goalIdToEdit = null,
@@ -67,7 +97,11 @@ fun NavGraph(
 
         composable(
             route = Screen.EditGoal.route,
-            arguments = listOf(navArgument("goalId") { type = NavType.LongType })
+            arguments = listOf(navArgument("goalId") { type = NavType.LongType }),
+            enterTransition = { slideEnter },
+            exitTransition = { slideExit },
+            popEnterTransition = { popSlideEnter },
+            popExitTransition = { popSlideExit }
         ) { backStackEntry ->
             val goalId = backStackEntry.arguments?.getLong("goalId") ?: 0L
             AddEditGoalScreen(
@@ -79,7 +113,11 @@ fun NavGraph(
 
         composable(
             route = Screen.GoalDetail.route,
-            arguments = listOf(navArgument("goalId") { type = NavType.LongType })
+            arguments = listOf(navArgument("goalId") { type = NavType.LongType }),
+            enterTransition = { slideEnter },
+            exitTransition = { slideExit },
+            popEnterTransition = { popSlideEnter },
+            popExitTransition = { popSlideExit }
         ) { backStackEntry ->
             val goalId = backStackEntry.arguments?.getLong("goalId") ?: 0L
             GoalDetailScreen(
@@ -90,28 +128,52 @@ fun NavGraph(
             )
         }
 
-        composable(Screen.History.route) {
+        composable(
+            route = Screen.History.route,
+            enterTransition = { slideEnter },
+            exitTransition = { slideExit },
+            popEnterTransition = { popSlideEnter },
+            popExitTransition = { popSlideExit }
+        ) {
             HistoryScreen(
                 viewModel = viewModel,
                 onNavigateTab = { route -> navController.navigate(route) { launchSingleTop = true } }
             )
         }
 
-        composable(Screen.Statistics.route) {
+        composable(
+            route = Screen.Statistics.route,
+            enterTransition = { slideEnter },
+            exitTransition = { slideExit },
+            popEnterTransition = { popSlideEnter },
+            popExitTransition = { popSlideExit }
+        ) {
             StatisticsScreen(
                 viewModel = viewModel,
                 onNavigateTab = { route -> navController.navigate(route) { launchSingleTop = true } }
             )
         }
 
-        composable(Screen.NotificationSettings.route) {
+        composable(
+            route = Screen.NotificationSettings.route,
+            enterTransition = { slideEnter },
+            exitTransition = { slideExit },
+            popEnterTransition = { popSlideEnter },
+            popExitTransition = { popSlideExit }
+        ) {
             NotificationSettingsScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() }
             )
         }
 
-        composable(Screen.Settings.route) {
+        composable(
+            route = Screen.Settings.route,
+            enterTransition = { slideEnter },
+            exitTransition = { slideExit },
+            popEnterTransition = { popSlideEnter },
+            popExitTransition = { popSlideExit }
+        ) {
             SettingsScreen(
                 viewModel = viewModel,
                 onNavigateToNotificationSettings = { navController.navigate(Screen.NotificationSettings.route) },

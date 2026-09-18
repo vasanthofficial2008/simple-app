@@ -1,5 +1,7 @@
 package com.dailygoal.reminder.ui.screens
 
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -37,11 +39,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dailygoal.reminder.ui.animation.AimlyMotionSpecs
+import com.dailygoal.reminder.ui.animation.AnimatedProgressCounter
+import com.dailygoal.reminder.ui.animation.StaggeredItemEntrance
+import com.dailygoal.reminder.ui.animation.specOrSnap
 import com.dailygoal.reminder.ui.components.BottomNavBar
 import com.dailygoal.reminder.ui.navigation.Screen
 import com.dailygoal.reminder.ui.theme.PrimaryIndigo
 import com.dailygoal.reminder.ui.theme.SecondaryTeal
-import com.dailygoal.reminder.ui.theme.SuccessGreen
 import com.dailygoal.reminder.ui.theme.WarningOrange
 import com.dailygoal.reminder.ui.viewmodel.GoalViewModel
 import com.dailygoal.reminder.util.DateUtils
@@ -60,9 +65,10 @@ fun StatisticsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Progress & Analytics 📊",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold
+                        text = "Progress & Analytics",
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -85,177 +91,196 @@ fun StatisticsScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Overview Streaks Card with Accent Gradient
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = PrimaryIndigo),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+            // Streak Hero Card
+            StaggeredItemEntrance(index = 0) {
+                Card(
+                    shape = RoundedCornerShape(26.dp),
+                    colors = CardDefaults.cardColors(containerColor = PrimaryIndigo),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column {
-                        Text(
-                            text = "Current Habit Streak",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = Color.White.copy(alpha = 0.85f)
-                        )
-                        Row(verticalAlignment = Alignment.Bottom) {
-                            Text(
-                                text = "${stats.currentStreak}",
-                                style = MaterialTheme.typography.displayLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "days 🔥",
-                                style = MaterialTheme.typography.titleLarge,
-                                color = Color.White.copy(alpha = 0.9f),
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-                        }
-                    }
-
-                    Box(
-                        contentAlignment = Alignment.Center,
+                    Row(
                         modifier = Modifier
-                            .size(72.dp)
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(Color.White.copy(alpha = 0.2f))
+                            .fillMaxWidth()
+                            .padding(22.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(text = "⚡", fontSize = 38.sp)
+                        Column {
+                            Text(
+                                text = "Current Streak",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Medium,
+                                color = Color.White.copy(alpha = 0.85f)
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Row(verticalAlignment = Alignment.Bottom) {
+                                AnimatedProgressCounter(
+                                    valueText = "${stats.currentStreak}",
+                                    textStyle = MaterialTheme.typography.displayLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "days 🔥",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = Color.White.copy(alpha = 0.9f),
+                                    modifier = Modifier.padding(bottom = 8.dp)
+                                )
+                            }
+                        }
+
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(68.dp)
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(Color.White.copy(alpha = 0.18f))
+                        ) {
+                            Text(text = "⚡", fontSize = 36.sp)
+                        }
                     }
                 }
             }
 
             // Today Completion Progress Bar Card
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "Today's Completion Rate",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+            StaggeredItemEntrance(index = 1) {
+                Card(
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Today's Completion Rate",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            AnimatedProgressCounter(
+                                valueText = "${stats.todayCompletionPercentage}%",
+                                textStyle = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = PrimaryIndigo
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        LinearProgressIndicator(
+                            progress = { (stats.todayCompletionPercentage / 100f).coerceIn(0f, 1f) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(10.dp)
+                                .clip(RoundedCornerShape(5.dp)),
+                            color = PrimaryIndigo,
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant
                         )
+
+                        Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            text = "${stats.todayCompletionPercentage}%",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = PrimaryIndigo
+                            text = "${stats.completedTodayCount} of ${stats.totalGoalsCount} daily goals completed today.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
                     }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    LinearProgressIndicator(
-                        progress = { (stats.todayCompletionPercentage / 100f).coerceIn(0f, 1f) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(12.dp)
-                            .clip(RoundedCornerShape(6.dp)),
-                        color = PrimaryIndigo,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Text(
-                        text = "${stats.completedTodayCount} out of ${stats.totalGoalsCount} daily goals completed today.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
                 }
             }
 
-            // Last 7 Days Visual Heatmap Card
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text(
-                        text = "Last 7 Days Consistency Grid",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
+            // Last 7 Days Visual Grid Card with Spring Animated Bars
+            StaggeredItemEntrance(index = 2) {
+                Card(
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Text(
+                            text = "Last 7 Days Consistency",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                    val past7Days = remember { DateUtils.getPastDays(7) }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Bottom
-                    ) {
-                        past7Days.forEach { dateStr ->
-                            val isDone = completedDates.contains(dateStr)
-                            val barHeight = if (isDone) 85.dp else 28.dp
-                            val barColor = if (isDone) SecondaryTeal else MaterialTheme.colorScheme.surfaceVariant
-
-                            val dateLabel = if (dateStr.length >= 2) dateStr.substring(dateStr.length - 2) else dateStr
-
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Bottom
-                            ) {
-                                Box(
-                                    contentAlignment = Alignment.Center,
-                                    modifier = Modifier
-                                        .width(32.dp)
-                                        .height(barHeight)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(barColor)
-                                ) {
-                                    if (isDone) {
-                                        Text(text = "✓", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                    }
-                                }
-                                Spacer(modifier = Modifier.height(6.dp))
-                                Text(
-                                    text = dateLabel,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        val past7Days = remember { DateUtils.getPastDays(7) }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Bottom
+                        ) {
+                            past7Days.forEach { dateStr ->
+                                val isDone = completedDates.contains(dateStr)
+                                val targetBarHeight = if (isDone) 80.dp else 24.dp
+                                val animatedBarHeight by animateDpAsState(
+                                    targetValue = targetBarHeight,
+                                    animationSpec = specOrSnap(AimlyMotionSpecs.HeroSpringDp),
+                                    label = "BarHeightAnim"
                                 )
+
+                                val barColor = if (isDone) SecondaryTeal else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                                val dateLabel = if (dateStr.length >= 2) dateStr.substring(dateStr.length - 2) else dateStr
+
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Bottom
+                                ) {
+                                    Box(
+                                        contentAlignment = Alignment.Center,
+                                        modifier = Modifier
+                                            .width(32.dp)
+                                            .height(animatedBarHeight)
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .background(barColor)
+                                    ) {
+                                        if (isDone) {
+                                            Text(text = "✓", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Text(
+                                        text = dateLabel,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
 
-            // Milestone Achievements Section
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text(
-                        text = "Badges & Achievements 🏆",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(14.dp))
+            // Milestone Achievements Card Section
+            StaggeredItemEntrance(index = 3) {
+                Card(
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Text(
+                            text = "Badges & Achievements 🏆",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(14.dp))
 
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        AchievementBadge(emoji = "⚡", title = "7-Day Streak", isUnlocked = stats.currentStreak >= 7)
-                        AchievementBadge(emoji = "🏆", title = "100 Goals", isUnlocked = stats.completedTodayCount >= 1)
-                        AchievementBadge(emoji = "🛡️", title = "Streak Shield", isUnlocked = true)
-                        AchievementBadge(emoji = "👑", title = "Master Focus", isUnlocked = stats.todayCompletionPercentage == 100)
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            AchievementBadge(emoji = "⚡", title = "7-Day Streak", isUnlocked = stats.currentStreak >= 7)
+                            AchievementBadge(emoji = "🏆", title = "100 Goals", isUnlocked = stats.completedTodayCount >= 1)
+                            AchievementBadge(emoji = "🛡️", title = "Streak Shield", isUnlocked = true)
+                            AchievementBadge(emoji = "👑", title = "Master Focus", isUnlocked = stats.todayCompletionPercentage == 100)
+                        }
                     }
                 }
             }
@@ -279,16 +304,16 @@ private fun AchievementBadge(
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(52.dp)
+                .size(50.dp)
                 .clip(CircleShape)
-                .background(if (isUnlocked) WarningOrange.copy(alpha = 0.15f) else Color.Gray.copy(alpha = 0.1f))
+                .background(if (isUnlocked) WarningOrange.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
                 .border(
                     width = 1.dp,
                     color = if (isUnlocked) WarningOrange else Color.Transparent,
                     shape = CircleShape
                 )
         ) {
-            Text(text = emoji, fontSize = 24.sp, modifier = Modifier.clip(CircleShape))
+            Text(text = emoji, fontSize = 22.sp)
         }
         Spacer(modifier = Modifier.height(6.dp))
         Text(

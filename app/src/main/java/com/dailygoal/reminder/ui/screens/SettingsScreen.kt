@@ -1,6 +1,6 @@
 package com.dailygoal.reminder.ui.screens
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -44,6 +44,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.dailygoal.reminder.ui.animation.StaggeredItemEntrance
+import com.dailygoal.reminder.ui.animation.aimlyPressFeedback
 import com.dailygoal.reminder.ui.components.BottomNavBar
 import com.dailygoal.reminder.ui.navigation.Screen
 import com.dailygoal.reminder.ui.theme.ExerciseRed
@@ -63,21 +65,27 @@ fun SettingsScreen(
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
-            title = { Text("Reset All Goals Data?") },
-            text = { Text("This will permanently clear all goals and completion history. Are you sure?") },
+            title = { Text("Reset All Goals Data?", fontWeight = FontWeight.Bold) },
+            text = { Text("This will permanently clear all goals, streaks, and completion logs.") },
             confirmButton = {
                 Button(
                     onClick = {
                         viewModel.resetAllData()
                         showResetDialog = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = ExerciseRed)
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = ExerciseRed),
+                    modifier = Modifier.aimlyPressFeedback(pressedScale = 0.94f)
                 ) {
-                    Text("Reset All")
+                    Text("Reset All", fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
-                OutlinedButton(onClick = { showResetDialog = false }) {
+                OutlinedButton(
+                    onClick = { showResetDialog = false },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.aimlyPressFeedback(pressedScale = 0.94f)
+                ) {
                     Text("Cancel")
                 }
             }
@@ -90,8 +98,9 @@ fun SettingsScreen(
                 title = {
                     Text(
                         text = "App Settings",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -115,62 +124,73 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // General Settings Card
-            Card(
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(8.dp)) {
-                    SettingItemRow(
-                        icon = Icons.Default.Notifications,
-                        title = "Notification Preferences",
-                        subtitle = "Snooze time, sound & vibration controls",
-                        onClick = onNavigateToNotificationSettings
-                    )
+            StaggeredItemEntrance(index = 0) {
+                Card(
+                    shape = RoundedCornerShape(22.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(6.dp)) {
+                        SettingItemRow(
+                            icon = Icons.Default.Notifications,
+                            title = "Notification Preferences",
+                            subtitle = "Snooze duration, sound & vibration controls",
+                            onClick = onNavigateToNotificationSettings
+                        )
+                    }
                 }
             }
 
             // Theme Selector Card
-            Card(
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(imageVector = Icons.Default.DarkMode, contentDescription = "Theme", tint = PrimaryIndigo)
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = "App Theme",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+            StaggeredItemEntrance(index = 1) {
+                Card(
+                    shape = RoundedCornerShape(22.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(18.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(imageVector = Icons.Default.DarkMode, contentDescription = "Theme", tint = PrimaryIndigo)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "App Appearance",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        listOf("SYSTEM", "LIGHT", "DARK").forEach { mode ->
-                            val isSelected = themeMode == mode
-                            if (isSelected) {
-                                Button(
-                                    onClick = { viewModel.setThemeMode(mode) },
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo),
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Text(text = mode, fontWeight = FontWeight.Bold)
-                                }
-                            } else {
-                                OutlinedButton(
-                                    onClick = { viewModel.setThemeMode(mode) },
-                                    shape = RoundedCornerShape(12.dp),
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Text(text = mode)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            listOf("SYSTEM", "LIGHT", "DARK").forEach { mode ->
+                                val isSelected = themeMode == mode
+                                if (isSelected) {
+                                    Button(
+                                        onClick = { viewModel.setThemeMode(mode) },
+                                        shape = RoundedCornerShape(14.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .aimlyPressFeedback(pressedScale = 0.94f)
+                                    ) {
+                                        Text(text = mode, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                                    }
+                                } else {
+                                    OutlinedButton(
+                                        onClick = { viewModel.setThemeMode(mode) },
+                                        shape = RoundedCornerShape(14.dp),
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .aimlyPressFeedback(pressedScale = 0.94f)
+                                    ) {
+                                        Text(text = mode, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                                    }
                                 }
                             }
                         }
@@ -179,49 +199,54 @@ fun SettingsScreen(
             }
 
             // Data Management Card
-            Card(
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(8.dp)) {
-                    SettingItemRow(
-                        icon = Icons.Default.Refresh,
-                        title = "Restore Default Sample Goals",
-                        subtitle = "Add pre-configured water, exercise & study goals",
-                        onClick = { viewModel.restoreSampleGoals() }
-                    )
-                    SettingItemRow(
-                        icon = Icons.Default.RestartAlt,
-                        title = "Reset All App Data",
-                        subtitle = "Clear all goals and streak history",
-                        titleColor = ExerciseRed,
-                        onClick = { showResetDialog = true }
-                    )
+            StaggeredItemEntrance(index = 2) {
+                Card(
+                    shape = RoundedCornerShape(22.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(6.dp)) {
+                        SettingItemRow(
+                            icon = Icons.Default.Refresh,
+                            title = "Restore Preset Sample Goals",
+                            subtitle = "Add pre-configured water, exercise & study goals",
+                            onClick = { viewModel.restoreSampleGoals() }
+                        )
+                        SettingItemRow(
+                            icon = Icons.Default.RestartAlt,
+                            title = "Reset All App Data",
+                            subtitle = "Clear all goals and streak history",
+                            titleColor = ExerciseRed,
+                            onClick = { showResetDialog = true }
+                        )
+                    }
                 }
             }
 
             // About App Card
-            Card(
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+            StaggeredItemEntrance(index = 3) {
+                Card(
+                    shape = RoundedCornerShape(22.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = "Aimly v1.0.0",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Daily Goals, Habit Streaks & Reminders",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Aimly v1.1.0",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Daily Goals, Habit Streaks & Reminders",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
                 }
             }
         }
@@ -239,7 +264,7 @@ fun SettingItemRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
+            .aimlyPressFeedback(pressedScale = 0.98f) { onClick() }
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -256,9 +281,10 @@ fun SettingItemRow(
                 fontWeight = FontWeight.SemiBold,
                 color = titleColor
             )
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = subtitle,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
         }

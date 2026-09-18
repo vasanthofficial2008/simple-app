@@ -1,7 +1,14 @@
 package com.dailygoal.reminder.ui.screens
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,11 +19,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -43,9 +47,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.dailygoal.reminder.ui.animation.AimlyMotionSpecs
+import com.dailygoal.reminder.ui.animation.StaggeredItemEntrance
+import com.dailygoal.reminder.ui.animation.aimlyPressFeedback
+import com.dailygoal.reminder.ui.animation.rememberReducedMotion
 import com.dailygoal.reminder.ui.components.BottomNavBar
 import com.dailygoal.reminder.ui.navigation.Screen
 import com.dailygoal.reminder.ui.theme.PrimaryIndigo
@@ -65,6 +71,7 @@ fun HistoryScreen(
     val completedDates by viewModel.completedDates.collectAsState()
     var currentCalendar by remember { mutableStateOf(Calendar.getInstance()) }
     var selectedDateString by remember { mutableStateOf(DateUtils.getTodayDateString()) }
+    val isReducedMotion = rememberReducedMotion()
 
     val daysInMonth = remember(currentCalendar.timeInMillis) {
         val cal = currentCalendar.clone() as Calendar
@@ -79,9 +86,10 @@ fun HistoryScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "History & Calendar",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold
+                        text = "Calendar & History",
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -103,121 +111,134 @@ fun HistoryScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Calendar Header Controls
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = DateUtils.getMonthYearFormatted(currentCalendar),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        Row {
-                            IconButton(onClick = {
-                                val cal = currentCalendar.clone() as Calendar
-                                cal.add(Calendar.MONTH, -1)
-                                currentCalendar = cal
-                            }) {
-                                Icon(imageVector = Icons.Default.ChevronLeft, contentDescription = "Previous Month")
+            // Calendar Header & Grid Card
+            StaggeredItemEntrance(index = 0) {
+                Card(
+                    shape = RoundedCornerShape(26.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(18.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AnimatedContent(
+                                targetState = DateUtils.getMonthYearFormatted(currentCalendar),
+                                transitionSpec = {
+                                    if (isReducedMotion) {
+                                        fadeIn(AimlyMotionSpecs.fastTween()) togetherWith fadeOut(AimlyMotionSpecs.fastTween())
+                                    } else {
+                                        (slideInHorizontally(AimlyMotionSpecs.fastTween()) { w -> w / 2 } + fadeIn(AimlyMotionSpecs.fastTween())) togetherWith
+                                                (slideOutHorizontally(AimlyMotionSpecs.fastTween()) { w -> -w / 2 } + fadeOut(AimlyMotionSpecs.fastTween())) using
+                                                SizeTransform(clip = false)
+                                    }
+                                },
+                                label = "MonthYearTextAnim"
+                            ) { monthText ->
+                                Text(
+                                    text = monthText,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold
+                                )
                             }
-                            IconButton(onClick = {
-                                val cal = currentCalendar.clone() as Calendar
-                                cal.add(Calendar.MONTH, 1)
-                                currentCalendar = cal
-                            }) {
-                                Icon(imageVector = Icons.Default.ChevronRight, contentDescription = "Next Month")
+
+                            Row {
+                                IconButton(
+                                    onClick = {
+                                        val cal = currentCalendar.clone() as Calendar
+                                        cal.add(Calendar.MONTH, -1)
+                                        currentCalendar = cal
+                                    },
+                                    modifier = Modifier.aimlyPressFeedback(pressedScale = 0.88f)
+                                ) {
+                                    Icon(imageVector = Icons.Default.ChevronLeft, contentDescription = "Previous Month")
+                                }
+                                IconButton(
+                                    onClick = {
+                                        val cal = currentCalendar.clone() as Calendar
+                                        cal.add(Calendar.MONTH, 1)
+                                        currentCalendar = cal
+                                    },
+                                    modifier = Modifier.aimlyPressFeedback(pressedScale = 0.88f)
+                                ) {
+                                    Icon(imageVector = Icons.Default.ChevronRight, contentDescription = "Next Month")
+                                }
                             }
                         }
-                    }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                    // Days of week header (Sun - Sat)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceAround
-                    ) {
-                        listOf("S", "M", "T", "W", "T", "F", "S").forEach { day ->
-                            Text(
-                                text = day,
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Calendar Days Grid
-                    val (maxDays, startOffset) = daysInMonth
-                    val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(7),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(240.dp)
-                    ) {
-                        // Empty leading cells
-                        items(startOffset) {
-                            Box(modifier = Modifier.size(36.dp))
+                        // Days of week header (Sun - Sat)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceAround
+                        ) {
+                            listOf("S", "M", "T", "W", "T", "F", "S").forEach { day ->
+                                Text(
+                                    text = day,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                )
+                            }
                         }
 
-                        // Month Days
-                        items(maxDays) { dayIndex ->
-                            val dayNum = dayIndex + 1
-                            val cellCal = currentCalendar.clone() as Calendar
-                            cellCal.set(Calendar.DAY_OF_MONTH, dayNum)
-                            val cellDateStr = sdf.format(cellCal.time)
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                            val isCompletedOnDate = completedDates.contains(cellDateStr)
-                            val isSelected = cellDateStr == selectedDateString
-                            val isToday = cellDateStr == DateUtils.getTodayDateString()
+                        // Calendar Days Grid
+                        val (maxDays, startOffset) = daysInMonth
+                        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier
-                                    .padding(2.dp)
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        when {
-                                            isSelected -> PrimaryIndigo
-                                            isCompletedOnDate -> SuccessGreen.copy(alpha = 0.25f)
-                                            else -> Color.Transparent
-                                        }
-                                    )
-                                    .clickable { selectedDateString = cellDateStr }
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(7),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(240.dp)
+                        ) {
+                            // Empty leading cells
+                            items(startOffset) {
+                                Box(modifier = Modifier.size(36.dp))
+                            }
+
+                            // Month Days
+                            items(maxDays) { dayIndex ->
+                                val dayNum = dayIndex + 1
+                                val cellCal = currentCalendar.clone() as Calendar
+                                cellCal.set(Calendar.DAY_OF_MONTH, dayNum)
+                                val cellDateStr = sdf.format(cellCal.time)
+
+                                val isCompletedOnDate = completedDates.contains(cellDateStr)
+                                val isSelected = cellDateStr == selectedDateString
+                                val isToday = cellDateStr == DateUtils.getTodayDateString()
+
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier
+                                        .padding(2.dp)
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            when {
+                                                isSelected -> PrimaryIndigo
+                                                isCompletedOnDate -> SuccessGreen.copy(alpha = 0.2f)
+                                                else -> Color.Transparent
+                                            }
+                                        )
+                                        .aimlyPressFeedback(pressedScale = 0.88f) { selectedDateString = cellDateStr }
+                                ) {
                                     Text(
                                         text = "$dayNum",
                                         style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal,
+                                        fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Medium,
                                         color = when {
                                             isSelected -> Color.White
-                                            isToday -> PrimaryIndigo
+                                            isCompletedOnDate -> SuccessGreen
                                             else -> MaterialTheme.colorScheme.onSurface
                                         }
                                     )
-                                    if (isCompletedOnDate && !isSelected) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(4.dp)
-                                                .clip(CircleShape)
-                                                .background(SuccessGreen)
-                                        )
-                                    }
                                 }
                             }
                         }
@@ -225,29 +246,31 @@ fun HistoryScreen(
                 }
             }
 
-            // Selected Date Summary
-            Text(
-                text = "Log for ${DateUtils.formatDateForDisplay(selectedDateString)}",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-
-            val isDateDone = completedDates.contains(selectedDateString)
-            Card(
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(16.dp)
+            // Selected Day Details Card
+            StaggeredItemEntrance(index = 1) {
+                val isSelectedCompleted = completedDates.contains(selectedDateString)
+                Card(
+                    shape = RoundedCornerShape(22.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = if (isDateDone) "🎉 Goals completed on this date!" else "📅 No completed goals logged on this date.",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = if (isDateDone) SuccessGreen else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                        fontWeight = if (isDateDone) FontWeight.Bold else FontWeight.Normal
-                    )
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Text(
+                            text = "Log for $selectedDateString",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = if (isSelectedCompleted) "✅ Goals Completed" else "⚪ No Completion Logged",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (isSelectedCompleted) SuccessGreen else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        }
+                    }
                 }
             }
         }

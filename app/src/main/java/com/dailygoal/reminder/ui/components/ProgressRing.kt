@@ -1,8 +1,6 @@
 package com.dailygoal.reminder.ui.components
 
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,13 +12,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.dailygoal.reminder.ui.animation.AimlyMotionSpecs
+import com.dailygoal.reminder.ui.animation.AnimatedProgressCounter
+import com.dailygoal.reminder.ui.animation.specOrSnap
 import com.dailygoal.reminder.ui.theme.PrimaryIndigo
 import com.dailygoal.reminder.ui.theme.SecondaryTeal
 
@@ -35,7 +34,7 @@ fun ProgressRing(
 ) {
     val animatedProgress by animateFloatAsState(
         targetValue = progressRatio.coerceIn(0f, 1f),
-        animationSpec = tween(durationMillis = 800, easing = FastOutSlowInEasing),
+        animationSpec = specOrSnap(AimlyMotionSpecs.ProgressSpring),
         label = "ProgressRingAnimation"
     )
 
@@ -69,9 +68,9 @@ fun ProgressRing(
         }
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = percentageText,
-                style = MaterialTheme.typography.headlineLarge,
+            AnimatedProgressCounter(
+                valueText = percentageText,
+                textStyle = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
             )

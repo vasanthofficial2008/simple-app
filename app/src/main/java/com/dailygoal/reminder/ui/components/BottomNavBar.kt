@@ -1,5 +1,7 @@
 package com.dailygoal.reminder.ui.components
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -12,8 +14,16 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.dailygoal.reminder.ui.animation.AimlyMotionSpecs
+import com.dailygoal.reminder.ui.animation.aimlyPressFeedback
+import com.dailygoal.reminder.ui.animation.rememberReducedMotion
 import com.dailygoal.reminder.ui.navigation.Screen
 import com.dailygoal.reminder.ui.theme.PrimaryIndigo
 
@@ -41,23 +51,47 @@ fun BottomNavBar(
         BottomNavItem.Settings
     )
 
+    val isReducedMotion = rememberReducedMotion()
+
     NavigationBar(
         containerColor = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
-        modifier = modifier
+        tonalElevation = 6.dp,
+        modifier = modifier.clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
     ) {
         items.forEach { item ->
             val isSelected = currentRoute == item.route
+
+            val iconScale by animateFloatAsState(
+                targetValue = if (isSelected && !isReducedMotion) 1.15f else 1.0f,
+                animationSpec = AimlyMotionSpecs.ChipSelectSpring,
+                label = "NavIconScale"
+            )
+
             NavigationBarItem(
                 selected = isSelected,
                 onClick = { onNavigate(item.route) },
-                icon = { Icon(imageVector = item.icon, contentDescription = item.title) },
-                label = { Text(text = item.title) },
+                icon = {
+                    Icon(
+                        imageVector = item.icon,
+                        contentDescription = item.title,
+                        modifier = Modifier.scale(iconScale)
+                    )
+                },
+                label = {
+                    Text(
+                        text = item.title,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                    )
+                },
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = PrimaryIndigo,
                     selectedTextColor = PrimaryIndigo,
-                    indicatorColor = PrimaryIndigo.copy(alpha = 0.15f)
-                )
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    indicatorColor = PrimaryIndigo.copy(alpha = 0.14f)
+                ),
+                modifier = Modifier.aimlyPressFeedback(pressedScale = 0.92f)
             )
         }
     }

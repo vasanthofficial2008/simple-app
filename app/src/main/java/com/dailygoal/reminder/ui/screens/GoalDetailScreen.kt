@@ -1,5 +1,6 @@
 package com.dailygoal.reminder.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,7 +31,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -50,6 +50,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dailygoal.reminder.data.model.GoalCategory
 import com.dailygoal.reminder.data.model.RepeatSchedule
+import com.dailygoal.reminder.ui.animation.StaggeredItemEntrance
+import com.dailygoal.reminder.ui.animation.aimlyPressFeedback
 import com.dailygoal.reminder.ui.components.DeleteConfirmationDialog
 import com.dailygoal.reminder.ui.components.getCategoryEmoji
 import com.dailygoal.reminder.ui.theme.ExerciseRed
@@ -91,17 +93,26 @@ fun GoalDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "Goal Details", fontWeight = FontWeight.Bold) },
+                title = { Text(text = "Goal Details", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge) },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(
+                        onClick = onNavigateBack,
+                        modifier = Modifier.aimlyPressFeedback(pressedScale = 0.88f)
+                    ) {
                         Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
-                    IconButton(onClick = { onNavigateToEdit(goal.id) }) {
+                    IconButton(
+                        onClick = { onNavigateToEdit(goal.id) },
+                        modifier = Modifier.aimlyPressFeedback(pressedScale = 0.88f)
+                    ) {
                         Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit Goal")
                     }
-                    IconButton(onClick = { showDeleteDialog = true }) {
+                    IconButton(
+                        onClick = { showDeleteDialog = true },
+                        modifier = Modifier.aimlyPressFeedback(pressedScale = 0.88f)
+                    ) {
                         Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete Goal", tint = ExerciseRed)
                     }
                 },
@@ -115,137 +126,146 @@ fun GoalDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp)
+                .padding(horizontal = 16.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Header Card
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = category.colorValue.copy(alpha = 0.12f)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp)
+            // Category Header Hero Card
+            StaggeredItemEntrance(index = 0) {
+                Card(
+                    shape = RoundedCornerShape(26.dp),
+                    colors = CardDefaults.cardColors(containerColor = category.colorValue.copy(alpha = 0.12f)),
+                    border = BorderStroke(1.dp, category.colorValue.copy(alpha = 0.3f)),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
-                            .size(72.dp)
-                            .clip(CircleShape)
-                            .background(category.colorValue.copy(alpha = 0.25f))
+                            .fillMaxWidth()
+                            .padding(24.dp)
                     ) {
-                        Text(text = getCategoryEmoji(category), fontSize = 36.sp)
-                    }
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(CircleShape)
+                                .background(category.colorValue.copy(alpha = 0.22f))
+                        ) {
+                            Text(text = getCategoryEmoji(category), fontSize = 36.sp)
+                        }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
 
-                    Text(
-                        text = goal.title,
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    if (goal.description.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = goal.description,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            text = goal.title,
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
+
+                        if (goal.description.isNotBlank()) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = goal.description,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                        }
                     }
                 }
             }
 
             // Overview Details Card
-            Card(
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+            StaggeredItemEntrance(index = 1) {
+                Card(
+                    shape = RoundedCornerShape(22.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = "Goal Configuration",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        Text(text = "Target:", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
-                        Text(text = "${goal.targetCount} ${goal.unit}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(text = "Reminder Time:", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
                         Text(
-                            text = if (goal.isReminderEnabled) DateUtils.formatTime(goal.reminderHour, goal.reminderMinute) else "Disabled",
-                            style = MaterialTheme.typography.bodyMedium,
+                            text = "Goal Overview",
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
-                    }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(text = "Schedule:", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
-                        Text(
-                            text = RepeatSchedule.getRepeatDaysText(goal.repeatDaysMask),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(text = "Target:", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f))
+                            Text(text = "${goal.targetCount} ${goal.unit}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                        }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(text = "Status:", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
-                        Text(
-                            text = if (goal.isPaused) "Paused ⏸️" else "Active 🟢",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = if (goal.isPaused) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f) else PrimaryIndigo
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(text = "Reminder Time:", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f))
+                            Text(
+                                text = if (goal.isReminderEnabled) DateUtils.formatTime(goal.reminderHour, goal.reminderMinute) else "Disabled",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(text = "Repeat Schedule:", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f))
+                            Text(
+                                text = RepeatSchedule.getRepeatDaysText(goal.repeatDaysMask),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(text = "Status:", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f))
+                            Text(
+                                text = if (goal.isPaused) "Paused ⏸️" else "Active 🟢",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = if (goal.isPaused) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f) else PrimaryIndigo
+                            )
+                        }
                     }
                 }
             }
 
             // Quick Actions: Pause / Resume Button
-            Button(
-                onClick = { viewModel.toggleGoalPause(goal) },
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (goal.isPaused) PrimaryIndigo else MaterialTheme.colorScheme.surfaceVariant
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp)
-            ) {
-                Icon(
-                    imageVector = if (goal.isPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
-                    contentDescription = "Pause Toggle",
-                    tint = if (goal.isPaused) Color.White else MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = if (goal.isPaused) "Resume Goal Reminders" else "Pause Goal",
-                    fontWeight = FontWeight.Bold,
-                    color = if (goal.isPaused) Color.White else MaterialTheme.colorScheme.onSurface
-                )
+            StaggeredItemEntrance(index = 2) {
+                Button(
+                    onClick = { viewModel.toggleGoalPause(goal) },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (goal.isPaused) PrimaryIndigo else MaterialTheme.colorScheme.surfaceVariant
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp)
+                        .aimlyPressFeedback(pressedScale = 0.95f)
+                ) {
+                    Icon(
+                        imageVector = if (goal.isPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
+                        contentDescription = "Pause Toggle",
+                        tint = if (goal.isPaused) Color.White else MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = if (goal.isPaused) "Resume Goal Reminders" else "Pause Goal",
+                        fontWeight = FontWeight.Bold,
+                        color = if (goal.isPaused) Color.White else MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
         }
     }

@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,7 +22,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material3.Button
@@ -51,6 +51,8 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.dailygoal.reminder.notification.NotificationHelper
+import com.dailygoal.reminder.ui.animation.StaggeredItemEntrance
+import com.dailygoal.reminder.ui.animation.aimlyPressFeedback
 import com.dailygoal.reminder.ui.theme.ExerciseRed
 import com.dailygoal.reminder.ui.theme.PrimaryIndigo
 import com.dailygoal.reminder.ui.viewmodel.GoalViewModel
@@ -78,9 +80,12 @@ fun NotificationSettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "Notification Settings", fontWeight = FontWeight.Bold) },
+                title = { Text(text = "Notification Settings", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge) },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(
+                        onClick = onNavigateBack,
+                        modifier = Modifier.aimlyPressFeedback(pressedScale = 0.88f)
+                    ) {
                         Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -94,90 +99,95 @@ fun NotificationSettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp)
+                .padding(horizontal = 16.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Global Notifications Toggle Card
-            Card(
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.padding(20.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+            StaggeredItemEntrance(index = 0) {
+                Card(
+                    shape = RoundedCornerShape(22.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Global Goal Reminders",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Master switch for scheduled local goal alerts",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    Row(
+                        modifier = Modifier.padding(20.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Global Goal Reminders",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Master switch for background local goal alerts",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        }
+                        Switch(
+                            checked = isGlobalEnabled,
+                            onCheckedChange = { viewModel.setGlobalNotifications(it) },
+                            colors = SwitchDefaults.colors(checkedThumbColor = PrimaryIndigo)
                         )
                     }
-                    Switch(
-                        checked = isGlobalEnabled,
-                        onCheckedChange = { viewModel.setGlobalNotifications(it) },
-                        colors = SwitchDefaults.colors(checkedThumbColor = PrimaryIndigo)
-                    )
                 }
             }
 
             // Exact Alarm Access Card (Android 12+)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                Card(
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (canScheduleExact) {
-                            MaterialTheme.colorScheme.surface
-                        } else {
-                            ExerciseRed.copy(alpha = 0.1f)
-                        }
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Alarm,
-                                contentDescription = "Exact Alarms",
-                                tint = if (canScheduleExact) PrimaryIndigo else ExerciseRed
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(
-                                text = "Exact Alarm Permission",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = if (canScheduleExact) {
-                                "Exact alarm access is active. Scheduled reminders trigger precisely at requested times."
-                            } else {
-                                "Exact alarm access is disabled by Android. Reminders will fallback to approximate delivery unless permission is granted."
-                            },
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        )
-
-                        if (!canScheduleExact) {
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Button(
-                                onClick = {
-                                    val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                                    context.startActivity(intent)
-                                },
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = ExerciseRed)
-                            ) {
-                                Text("Open System Alarm Settings", fontWeight = FontWeight.Bold)
+                StaggeredItemEntrance(index = 1) {
+                    Card(
+                        shape = RoundedCornerShape(22.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (canScheduleExact) MaterialTheme.colorScheme.surface else ExerciseRed.copy(alpha = 0.08f)
+                        ),
+                        border = BorderStroke(
+                            width = 1.dp,
+                            color = if (canScheduleExact) MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f) else ExerciseRed.copy(alpha = 0.3f)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(20.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Alarm,
+                                    contentDescription = "Exact Alarm",
+                                    tint = if (canScheduleExact) PrimaryIndigo else ExerciseRed
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Exact Alarm Permission",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = if (canScheduleExact) "Granted • Alarms trigger precisely" else "Action Required • Tap to grant in system settings",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = if (canScheduleExact) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f) else ExerciseRed
+                                    )
+                                }
+                            }
+                            if (!canScheduleExact) {
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Button(
+                                    onClick = {
+                                        val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                                        context.startActivity(intent)
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = ExerciseRed),
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .aimlyPressFeedback(pressedScale = 0.95f)
+                                ) {
+                                    Text(text = "Grant Exact Alarm Permission", fontWeight = FontWeight.Bold)
+                                }
                             }
                         }
                     }
@@ -185,50 +195,48 @@ fun NotificationSettingsScreen(
             }
 
             // Snooze Duration Selector Card
-            Card(
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text(
-                        text = "Default Snooze Duration",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "When you tap Snooze on a goal reminder",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
+            StaggeredItemEntrance(index = 2) {
+                Card(
+                    shape = RoundedCornerShape(22.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Text(
+                            text = "Snooze Duration",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Delay reminder interval when snoozed",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                        Spacer(modifier = Modifier.height(14.dp))
 
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        snoozeOptions.forEach { minutes ->
-                            val isSelected = minutes == snoozeMinutes
-                            val label = if (minutes == 60) "1 Hr" else "$minutes min"
-
-                            if (isSelected) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            snoozeOptions.forEach { option ->
+                                val isSelected = snoozeMinutes == option
                                 Button(
-                                    onClick = { viewModel.setSnoozeDuration(minutes) },
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo),
-                                    modifier = Modifier.weight(1f)
+                                    onClick = { viewModel.setSnoozeDuration(option) },
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (isSelected) PrimaryIndigo else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                        contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                                    ),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .aimlyPressFeedback(pressedScale = 0.93f)
                                 ) {
-                                    Text(text = label, fontWeight = FontWeight.Bold)
-                                }
-                            } else {
-                                OutlinedButton(
-                                    onClick = { viewModel.setSnoozeDuration(minutes) },
-                                    shape = RoundedCornerShape(12.dp),
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Text(text = label)
+                                    Text(
+                                        text = "${option}m",
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                    )
                                 }
                             }
                         }
@@ -236,103 +244,66 @@ fun NotificationSettingsScreen(
                 }
             }
 
-            // FCM Push Token Status Card
-            val fcmToken = viewModel.prefsManager.fcmToken
-            Card(
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.CloudDone,
-                            contentDescription = "FCM Token",
-                            tint = PrimaryIndigo
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
+            // Test Notification & Deep Link Diagnostic Card
+            StaggeredItemEntrance(index = 3) {
+                Card(
+                    shape = RoundedCornerShape(22.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
                         Text(
-                            text = "Firebase Cloud Messaging (FCM)",
+                            text = "Notification Diagnostic Tools",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
-                    }
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = if (fcmToken != null) {
-                            "FCM Push Registration Token active."
-                        } else {
-                            "FCM registration token pending initialization."
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    )
+                        Spacer(modifier = Modifier.height(14.dp))
 
-                    if (fcmToken != null) {
+                        Button(
+                            onClick = {
+                                NotificationHelper(context).showGoalNotification(
+                                    goalId = 1L,
+                                    title = "Drink 2L Water",
+                                    category = "WATER",
+                                    targetCount = 2,
+                                    unit = "Liters"
+                                )
+                                Toast.makeText(context, "Test notification dispatched!", Toast.LENGTH_SHORT).show()
+                            },
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .aimlyPressFeedback(pressedScale = 0.95f)
+                        ) {
+                            Icon(imageVector = Icons.Default.NotificationsActive, contentDescription = "Test")
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = "Send Test Notification", fontWeight = FontWeight.Bold)
+                        }
+
                         Spacer(modifier = Modifier.height(10.dp))
+
                         OutlinedButton(
                             onClick = {
-                                clipboardManager.setText(AnnotatedString(fcmToken))
-                                Toast.makeText(context, "FCM Token copied to clipboard!", Toast.LENGTH_SHORT).show()
+                                val testLink = "aimly://goal/1"
+                                clipboardManager.setText(AnnotatedString(testLink))
+                                Toast.makeText(context, "Deep link copied: $testLink", Toast.LENGTH_SHORT).show()
                             },
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .aimlyPressFeedback(pressedScale = 0.95f)
                         ) {
-                            Icon(imageVector = Icons.Default.ContentCopy, contentDescription = "Copy Token")
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Copy FCM Token")
+                            Icon(imageVector = Icons.Default.ContentCopy, contentDescription = "Copy")
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = "Copy Sample Deep Link (aimly://goal/1)", fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
             }
 
-            // Test Notification Trigger Card
-            Card(
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = PrimaryIndigo.copy(alpha = 0.1f)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.NotificationsActive,
-                            contentDescription = "Test Notification",
-                            tint = PrimaryIndigo
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            text = "Test Local & Push Alert",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = PrimaryIndigo
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = "Trigger a sample Aimly goal reminder notification right now.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    )
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    Button(
-                        onClick = {
-                            val helper = NotificationHelper(context)
-                            helper.showGoalNotification(
-                                goalId = 9999L,
-                                title = "Drink 2L Water",
-                                category = "WATER",
-                                targetCount = 2,
-                                unit = "Liters"
-                            )
-                        },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(text = "Send Test Notification Now", fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }

@@ -1,103 +1,53 @@
-# Walkthrough — Aimly: Complete Production / Play Store / FCM Upgrade
+# Walkthrough — Aimly Premium UI/UX & Motion Polish Upgrade
 
-The native Android application has been fully audited, upgraded, and transformed into **Aimly** — a production-ready daily goal, habit, streak, and reminder app prepared for Google Play Store release.
-
----
-
-## 1. Summary of Accomplished Changes
-
-### 🛠️ Phase 1: Build Infrastructure & Tooling Upgrade
-- **Gradle & AGP Compatibility**: Updated Gradle Wrapper to `8.9` and AGP to `8.7.3`, Kotlin to `2.0.20`, and KSP to `2.0.20-1.0.25` for full compatibility with Java 25 (`JBR 25.0.3`) and Target SDK `34`.
-- **Firebase BoM & Dependencies**: Added Firebase BoM `33.1.0`, `firebase-messaging`, `firebase-analytics`, and Google Services plugin `4.4.1`.
-- **Production Release Signing**: Configured `signingConfigs.release` in `app/build.gradle.kts` to read environment variables (`KEYSTORE_FILE`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`) with a safe fallback to debug signing if environment variables are omitted locally.
-- **R8 Minification & Optimization**: Enabled `isMinifyEnabled = true` and `isShrinkResources = true` with comprehensive keep rules in `app/proguard-rules.pro` for Room DB, Firebase, Coroutines, and Jetpack Compose.
+The **Aimly — Daily Goals & Habits** app has been upgraded to a polished, premium Material 3 habit and productivity application. The upgrade refines the visual language, introduces fluid motion and spring physics, elevates hierarchy and spacing, and maintains strict adherence to the existing MVVM + Room architecture.
 
 ---
 
-### 🎯 Phase 2: Branding Upgrade to "Aimly"
-- **App Label & Strings**: Updated `app_name` to **Aimly** and updated UI text across [SplashScreen.kt](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/ui/screens/SplashScreen.kt), [OnboardingScreen.kt](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/ui/screens/OnboardingScreen.kt), [SettingsScreen.kt](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/ui/screens/SettingsScreen.kt), and [strings.xml](file:///c:/ll/simple-app/app/src/main/res/values/strings.xml).
-- **Permanent Application ID**: Preserved `com.dailygoal.reminder` as the production package identifier to ensure database safety and prevent Play Store migration risks.
-- **Adaptive Launcher Icons**: Created vector drawables and adaptive XML resources ([ic_launcher.xml](file:///c:/ll/simple-app/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml), [ic_launcher_background.xml](file:///c:/ll/simple-app/app/src/main/res/drawable/ic_launcher_background.xml), [ic_launcher_foreground.xml](file:///c:/ll/simple-app/app/src/main/res/drawable/ic_launcher_foreground.xml)) featuring Aimly target branding.
+## 🎨 Summary of UI/UX & Design System Enhancements
+
+### 1. Modern Material 3 Design System & Theme
+- **Refined Slate/Indigo Palette ([`Color.kt`](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/ui/theme/Color.kt))**: Modern Indigo (`#4F46E5`), Sky Teal (`#0EA5E9`), deep slate dark surfaces (`#0B0F17` background, `#141B2D` surface cards), and clean slate light surfaces (`#F8FAFC`).
+- **Surface Elevation & Borders ([`Theme.kt`](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/ui/theme/Theme.kt))**: Crisp border strokes (`1.dp` with 35% opacity) and consistent **20–28dp corner radii** across all cards and containers.
+- **System Navigation Sync**: Status bar and navigation bar colors seamlessly sync with active Light, Dark, or System theme settings.
 
 ---
 
-### ☁️ Phase 3: Firebase Cloud Messaging (FCM) Integration
-- **Token Management Repository**: Created [PushTokenRepository.kt](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/data/repository/PushTokenRepository.kt) to manage token retrieval, local caching, topic subscriptions (`aimly_all_users`, `aimly_updates`, `aimly_challenges`), and backend synchronization abstraction.
-- **Firebase Messaging Service**: Implemented [AimlyFirebaseMessagingService.kt](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/notification/AimlyFirebaseMessagingService.kt) to listen to `onNewToken` and `onMessageReceived`, validate payloads, and trigger notifications safely.
-- **Multi-Channel Separation**: Updated [NotificationHelper.kt](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/notification/NotificationHelper.kt) to establish distinct channels:
-  - `aimly_reminders_channel` (High Importance - Local Alarms)
-  - `aimly_updates_channel` (Default Importance - Product Announcements)
-  - `aimly_promotions_channel` (Default Importance - Challenges & Motivation)
+### 2. Home Dashboard & Routine Checklist ([`HomeScreen.kt`](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/ui/screens/HomeScreen.kt))
+- **Prominent "Today" Hero Card**: Displays daily progress ring percentage, completed count, and remaining targets in a compact 26dp rounded container.
+- **Animated Search Bar**: Dynamic search input with smooth `AnimatedVisibility` expansion/collapse when tapping the search action icon.
+- **Integrated Daily Reflection Card ([`DailyReflectionCard.kt`](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/ui/components/DailyReflectionCard.kt))**: Blends seamlessly into the dashboard with subtle energy level feedback (`🚀 Super Focus`, `😊 Good Pace`, `☕ Steady`, `🔋 Low Battery`).
+- **Next Upcoming Reminder Section**: Compact Teal notification card highlighting the next scheduled reminder time and goal title.
+- **Polished Goal Checklist & Scannability ([`GoalCard.kt`](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/ui/components/GoalCard.kt))**:
+  - Category icon avatar $\rightarrow$ Title & Reminder $\rightarrow$ Animated Progress bar $\rightarrow$ Checkbox.
+  - Spring damping scale physics (`Spring.DampingRatioMediumBouncy`) on card click/pressed states.
+  - Smooth checkmark completion state transitions with `animateColorAsState` and `scaleIn`/`fadeIn` motion.
 
 ---
 
-### ⏰ Phase 4: Local Reminder System & Exact Alarm Hardening
-- **Exact Alarm Policy**: Audited [AlarmScheduler.kt](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/notification/AlarmScheduler.kt) and [AndroidManifest.xml](file:///c:/ll/simple-app/app/src/main/AndroidManifest.xml). Uses `SCHEDULE_EXACT_ALARM` with runtime check `canScheduleExactAlarms()` on Android 12+ (API 31+) and graceful fallback to `setAndAllowWhileIdle()`.
-- **System Settings Prompt**: Added exact alarm status card and button to open Android System Settings in [NotificationSettingsScreen.kt](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/ui/screens/NotificationSettingsScreen.kt).
-- **ISO Date & Thread Safety**: Hardened [DateUtils.kt](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/util/DateUtils.kt) to use `Locale.US` for `yyyy-MM-dd` date calculations across timezones and locales.
+### 3. Reusable Component Upgrades
+- **Animated Category Chips ([`CategoryChip.kt`](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/ui/components/CategoryChip.kt))**: `16dp` pill styling with `animateColorAsState` background/text transitions and spring press scale.
+- **Streak Flame Badges ([`StreakBadge.kt`](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/ui/components/StreakBadge.kt))**: Infinite pulse scale for streaks $\ge 7$ days and 🛡️ Streak Shield indicators.
+- **Bottom Navigation Bar ([`BottomNavBar.kt`](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/ui/components/BottomNavBar.kt))**: Top-rounded `24dp` container with subtle pill indicators and unselected contrast text.
 
 ---
 
-### 🔗 Phase 5: Deep Linking & Intent Navigation
-- **Deep Link Handling**: Configured `aimly://` URI scheme in [AndroidManifest.xml](file:///c:/ll/simple-app/app/src/main/AndroidManifest.xml).
-- **MainActivity Routing**: Updated [MainActivity.kt](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/MainActivity.kt) to parse deep links (`aimly://home`, `aimly://goal/{id}`, `aimly://history`, `aimly://statistics`, `aimly://settings`) and navigate seamlessly upon notification tap.
+### 4. Secondary Screens Refinements
+- **Add / Edit Goal ([`AddEditGoalScreen.kt`](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/ui/screens/AddEditGoalScreen.kt))**: `16dp` rounded form input fields, custom time picker card, repeat schedule selector, and prominent `54dp` save button.
+- **Goal Details ([`GoalDetailScreen.kt`](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/ui/screens/GoalDetailScreen.kt))**: Hero category header, configuration overview table, and quick Pause/Resume controls.
+- **Statistics & Analytics ([`StatisticsScreen.kt`](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/ui/screens/StatisticsScreen.kt))**: Streak hero card, 7-day consistency grid with animated column heights (`animateDpAsState`), and unlockable milestone badges.
+- **Calendar & History ([`HistoryScreen.kt`](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/ui/screens/HistoryScreen.kt))**: `26dp` calendar container, month navigation, circle selection highlights, and daily completion status.
+- **Settings & Notifications ([`SettingsScreen.kt`](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/ui/screens/SettingsScreen.kt) & [`NotificationSettingsScreen.kt`](file:///c:/ll/simple-app/app/src/main/java/com/dailygoal/reminder/ui/screens/NotificationSettingsScreen.kt))**: Grouped setting cards, theme mode segment controls (`SYSTEM`, `LIGHT`, `DARK`), and test alert triggers.
 
 ---
 
-### 📚 Phase 6: Documentation, Security & Play Store Assets
-- Created comprehensive documentation:
-  - [FIREBASE_SETUP.md](file:///c:/ll/simple-app/FIREBASE_SETUP.md)
-  - [PLAY_STORE_RELEASE.md](file:///c:/ll/simple-app/PLAY_STORE_RELEASE.md)
-  - [AIMLY_ARCHITECTURE.md](file:///c:/ll/simple-app/AIMLY_ARCHITECTURE.md)
-  - [PRIVACY_POLICY.md](file:///c:/ll/simple-app/PRIVACY_POLICY.md)
-  - [STORE_LISTING.md](file:///c:/ll/simple-app/STORE_LISTING.md)
-  - [.gitignore](file:///c:/ll/simple-app/.gitignore)
+## 🛠️ Verification Results
 
----
+```powershell
+$env:JAVA_HOME="C:\Program Files\Android\Android Studio\jbr"; .\gradlew.bat test assembleDebug bundleRelease "-Djava.version=21"
+```
 
-## 2. Verification Results
-
-| Verification Area | Target Command | Result | Output Artifact |
-| :--- | :--- | :--- | :--- |
-| **Unit Tests** | `./gradlew test` | **PASS** | `app/build/reports/tests/testDebugUnitTest/index.html` |
-| **Debug Build** | `./gradlew assembleDebug` | **PASS** | `app/build/outputs/apk/debug/app-debug.apk` |
-| **Release Bundle** | `./gradlew bundleRelease` | **PASS** | `app/build/outputs/bundle/release/app-release.aab` (Size: 4.46 MB) |
-
----
-
-## 3. Summary of Files Created and Modified
-
-### New Files Created
-1. `app/google-services.json`
-2. `app/src/main/java/com/dailygoal/reminder/data/repository/PushTokenRepository.kt`
-3. `app/src/main/java/com/dailygoal/reminder/notification/AimlyFirebaseMessagingService.kt`
-4. `app/src/main/res/drawable/ic_launcher_background.xml`
-5. `app/src/main/res/drawable/ic_launcher_foreground.xml`
-6. `app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml`
-7. `app/src/test/java/com/dailygoal/reminder/FcmPayloadValidationTest.kt`
-8. `FIREBASE_SETUP.md`
-9. `PLAY_STORE_RELEASE.md`
-10. `AIMLY_ARCHITECTURE.md`
-11. `PRIVACY_POLICY.md`
-12. `STORE_LISTING.md`
-13. `.gitignore`
-
-### Existing Files Upgraded
-1. `gradle/wrapper/gradle-wrapper.properties`
-2. `gradle/libs.versions.toml`
-3. `build.gradle.kts`
-4. `app/build.gradle.kts`
-5. `gradle.properties`
-6. `app/proguard-rules.pro`
-7. `app/src/main/res/values/strings.xml`
-8. `app/src/main/AndroidManifest.xml`
-9. `app/src/main/java/com/dailygoal/reminder/DailyGoalApp.kt`
-10. `app/src/main/java/com/dailygoal/reminder/MainActivity.kt`
-11. `app/src/main/java/com/dailygoal/reminder/data/local/preferences/PreferencesManager.kt`
-12. `app/src/main/java/com/dailygoal/reminder/notification/NotificationHelper.kt`
-13. `app/src/main/java/com/dailygoal/reminder/util/DateUtils.kt`
-14. `app/src/main/java/com/dailygoal/reminder/ui/screens/SplashScreen.kt`
-15. `app/src/main/java/com/dailygoal/reminder/ui/screens/HomeScreen.kt`
-16. `app/src/main/java/com/dailygoal/reminder/ui/screens/SettingsScreen.kt`
-17. `app/src/main/java/com/dailygoal/reminder/ui/screens/NotificationSettingsScreen.kt`
-18. `app/src/main/java/com/dailygoal/reminder/ui/screens/StatisticsScreen.kt`
+- **Unit Test Suite**: **PASS** (Zero test failures)
+- **Debug APK**: **PASS** (`app-debug.apk` built successfully)
+- **Release App Bundle**: **PASS** ([`app/build/outputs/bundle/release/app-release.aab`](file:///c:/ll/simple-app/app/build/outputs/bundle/release/app-release.aab) built & production signed)
+- **Build Status**: **`BUILD SUCCESSFUL in 4m 14s`**
