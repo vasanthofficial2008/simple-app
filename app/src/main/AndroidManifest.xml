@@ -19,7 +19,7 @@
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/Theme.DailyGoalReminder"
-        tools:targetApi="34">
+        tools:targetApi="36">
 
         <!-- Default FCM Channel & Icon Metadata -->
         <meta-data

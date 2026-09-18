@@ -1,6 +1,7 @@
 package com.dailygoal.reminder.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
@@ -58,7 +60,7 @@ fun StatisticsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Progress Statistics",
+                        text = "Progress & Analytics 📊",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -83,9 +85,9 @@ fun StatisticsScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Overview Streaks Card
+            // Overview Streaks Card with Accent Gradient
             Card(
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = PrimaryIndigo),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -98,9 +100,9 @@ fun StatisticsScreen(
                 ) {
                     Column {
                         Text(
-                            text = "Current Streak",
+                            text = "Current Habit Streak",
                             style = MaterialTheme.typography.titleMedium,
-                            color = Color.White.copy(alpha = 0.8f)
+                            color = Color.White.copy(alpha = 0.85f)
                         )
                         Row(verticalAlignment = Alignment.Bottom) {
                             Text(
@@ -122,18 +124,18 @@ fun StatisticsScreen(
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
-                            .size(70.dp)
-                            .clip(RoundedCornerShape(16.dp))
+                            .size(72.dp)
+                            .clip(RoundedCornerShape(20.dp))
                             .background(Color.White.copy(alpha = 0.2f))
                     ) {
-                        Text(text = "🔥", fontSize = 36.sp)
+                        Text(text = "⚡", fontSize = 38.sp)
                     }
                 }
             }
 
             // Today Completion Progress Bar Card
             Card(
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -143,7 +145,7 @@ fun StatisticsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "Today Completion",
+                            text = "Today's Completion Rate",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
@@ -158,7 +160,7 @@ fun StatisticsScreen(
                     Spacer(modifier = Modifier.height(10.dp))
 
                     LinearProgressIndicator(
-                        progress = { stats.todayCompletionPercentage / 100f },
+                        progress = { (stats.todayCompletionPercentage / 100f).coerceIn(0f, 1f) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(12.dp)
@@ -176,15 +178,15 @@ fun StatisticsScreen(
                 }
             }
 
-            // Last 7 Days Visual Progress Card
+            // Last 7 Days Visual Heatmap Card
             Card(
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Text(
-                        text = "Last 7 Days Progress",
+                        text = "Last 7 Days Consistency Grid",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -198,7 +200,7 @@ fun StatisticsScreen(
                     ) {
                         past7Days.forEach { dateStr ->
                             val isDone = completedDates.contains(dateStr)
-                            val barHeight = if (isDone) 80.dp else 24.dp
+                            val barHeight = if (isDone) 85.dp else 28.dp
                             val barColor = if (isDone) SecondaryTeal else MaterialTheme.colorScheme.surfaceVariant
 
                             val dateLabel = if (dateStr.length >= 2) dateStr.substring(dateStr.length - 2) else dateStr
@@ -208,16 +210,22 @@ fun StatisticsScreen(
                                 verticalArrangement = Arrangement.Bottom
                             ) {
                                 Box(
+                                    contentAlignment = Alignment.Center,
                                     modifier = Modifier
-                                        .width(28.dp)
+                                        .width(32.dp)
                                         .height(barHeight)
-                                        .clip(RoundedCornerShape(8.dp))
+                                        .clip(RoundedCornerShape(10.dp))
                                         .background(barColor)
-                                )
+                                ) {
+                                    if (isDone) {
+                                        Text(text = "✓", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                    }
+                                }
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Text(
                                     text = dateLabel,
                                     style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                 )
                             }
@@ -226,7 +234,69 @@ fun StatisticsScreen(
                 }
             }
 
+            // Milestone Achievements Section
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text(
+                        text = "Badges & Achievements 🏆",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        AchievementBadge(emoji = "⚡", title = "7-Day Streak", isUnlocked = stats.currentStreak >= 7)
+                        AchievementBadge(emoji = "🏆", title = "100 Goals", isUnlocked = stats.completedTodayCount >= 1)
+                        AchievementBadge(emoji = "🛡️", title = "Streak Shield", isUnlocked = true)
+                        AchievementBadge(emoji = "👑", title = "Master Focus", isUnlocked = stats.todayCompletionPercentage == 100)
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(80.dp))
         }
+    }
+}
+
+@Composable
+private fun AchievementBadge(
+    emoji: String,
+    title: String,
+    isUnlocked: Boolean
+) {
+    val alpha = if (isUnlocked) 1.0f else 0.4f
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.width(72.dp)
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(52.dp)
+                .clip(CircleShape)
+                .background(if (isUnlocked) WarningOrange.copy(alpha = 0.15f) else Color.Gray.copy(alpha = 0.1f))
+                .border(
+                    width = 1.dp,
+                    color = if (isUnlocked) WarningOrange else Color.Transparent,
+                    shape = CircleShape
+                )
+        ) {
+            Text(text = emoji, fontSize = 24.sp, modifier = Modifier.clip(CircleShape))
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = if (isUnlocked) FontWeight.Bold else FontWeight.Normal,
+            fontSize = 10.sp,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = alpha)
+        )
     }
 }

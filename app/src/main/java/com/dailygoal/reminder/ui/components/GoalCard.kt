@@ -1,9 +1,11 @@
 package com.dailygoal.reminder.ui.components
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -36,6 +38,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -44,6 +48,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dailygoal.reminder.data.model.GoalCategory
 import com.dailygoal.reminder.data.model.GoalWithProgress
+import com.dailygoal.reminder.ui.theme.PrimaryIndigo
+import com.dailygoal.reminder.ui.theme.SecondaryTeal
 import com.dailygoal.reminder.ui.theme.SuccessGreen
 import com.dailygoal.reminder.util.DateUtils
 
@@ -59,45 +65,68 @@ fun GoalCard(
     val category = GoalCategory.fromName(goal.category)
     val isDone = goalWithProgress.isCompletedToday
 
-    val cardAlpha = if (goal.isPaused) 0.5f else 1.0f
+    val cardScale by animateFloatAsState(
+        targetValue = if (isDone) 0.98f else 1.0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "cardScale"
+    )
+
     val categoryColor = category.colorValue
+    val animatedCheckColor by animateColorAsState(
+        targetValue = if (isDone) SuccessGreen else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+        animationSpec = tween(300),
+        label = "checkColor"
+    )
+
+    val cardBorder = if (isDone) {
+        BorderStroke(1.5.dp, SuccessGreen.copy(alpha = 0.5f))
+    } else if (goalWithProgress.streak >= 5) {
+        BorderStroke(1.5.dp, Brush.horizontalGradient(listOf(PrimaryIndigo, SecondaryTeal)))
+    } else {
+        BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+    }
 
     Card(
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = if (isDone) MaterialTheme.colorScheme.surface.copy(alpha = 0.85f) else MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = cardBorder,
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isDone) 1.dp else 4.dp),
         modifier = modifier
             .fillMaxWidth()
+            .scale(cardScale)
             .clickable { onClick() }
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(18.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Category Icon Bubble
+                // Category Emoji Avatar with Glow
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .size(48.dp)
+                        .size(52.dp)
                         .clip(CircleShape)
-                        .background(categoryColor.copy(alpha = 0.15f))
+                        .background(categoryColor.copy(alpha = 0.18f))
                 ) {
                     Text(
-                        text = getCategoryEmoji(category),
-                        fontSize = 22.sp
+                        text = getCategoryEmojiString(category),
+                        fontSize = 24.sp
                     )
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(14.dp))
 
-                // Title & Description
+                // Title & Details
                 Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
@@ -107,45 +136,59 @@ fun GoalCard(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             textDecoration = if (isDone) TextDecoration.LineThrough else TextDecoration.None,
-                            color = if (isDone) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface
+                            color = if (isDone) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f, fill = false)
                         )
+
                         if (goal.isPaused) {
                             Spacer(modifier = Modifier.width(6.dp))
                             Icon(
                                 imageVector = Icons.Default.Pause,
                                 contentDescription = "Paused",
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                     }
 
-                    if (goal.description.isNotBlank()) {
-                        Text(
-                            text = goal.description,
-                            style = MaterialTheme.typography.bodyMedium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                    }
+                    Spacer(modifier = Modifier.height(3.dp))
 
-                    // Reminder Time Pill
-                    if (goal.isReminderEnabled) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Category Pill
+                        Text(
+                            text = category.displayName,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = categoryColor,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(categoryColor.copy(alpha = 0.12f))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+
+                        if (goal.isReminderEnabled) {
+                            Spacer(modifier = Modifier.width(8.dp))
                             Icon(
                                 imageVector = Icons.Default.Notifications,
                                 contentDescription = "Reminder",
-                                modifier = Modifier.size(12.dp),
-                                tint = categoryColor
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                modifier = Modifier.size(13.dp)
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Spacer(modifier = Modifier.width(2.dp))
                             Text(
                                 text = DateUtils.formatTime(goal.reminderHour, goal.reminderMinute),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = categoryColor,
-                                fontWeight = FontWeight.SemiBold
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        }
+
+                        if (goalWithProgress.streak > 0) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "🔥 ${goalWithProgress.streak}d",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
@@ -153,34 +196,30 @@ fun GoalCard(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                // Checkbox / Completion Toggle
+                // Interactive Checkbox Button
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(44.dp)
                         .clip(CircleShape)
-                        .background(if (isDone) SuccessGreen else Color.Transparent)
-                        .border(
-                            width = 2.dp,
-                            color = if (isDone) SuccessGreen else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                            shape = CircleShape
-                        )
+                        .background(if (isDone) SuccessGreen.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                        .border(2.dp, animatedCheckColor, CircleShape)
                         .clickable { onToggleCompletion() }
                 ) {
                     if (isDone) {
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = "Completed",
-                            tint = Color.White,
+                            tint = SuccessGreen,
                             modifier = Modifier.size(24.dp)
                         )
                     }
                 }
             }
 
-            // Progress Bar & Target Count
+            // Target Count Progress Bar
             if (goal.targetCount > 1) {
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -188,50 +227,48 @@ fun GoalCard(
                 ) {
                     Text(
                         text = "Progress: ${goalWithProgress.currentProgress} / ${goal.targetCount} ${goal.unit}",
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
+
                     if (!isDone) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(categoryColor.copy(alpha = 0.15f))
-                                .clickable { onIncrementProgress() }
-                                .padding(horizontal = 8.dp, vertical = 2.dp)
+                        IconButton(
+                            onClick = onIncrementProgress,
+                            modifier = Modifier.size(32.dp)
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = "Add progress",
-                                    tint = categoryColor,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Text(
-                                    text = "+1",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = categoryColor,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Add Progress",
+                                tint = categoryColor,
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
                     }
                 }
                 Spacer(modifier = Modifier.height(6.dp))
-                val animatedProgress by animateFloatAsState(
-                    targetValue = goalWithProgress.progressRatio,
-                    label = "GoalLinearProgress"
-                )
                 LinearProgressIndicator(
-                    progress = { animatedProgress },
+                    progress = { goalWithProgress.progressRatio },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(8.dp)
                         .clip(RoundedCornerShape(4.dp)),
-                    color = if (isDone) SuccessGreen else categoryColor,
+                    color = categoryColor,
                     trackColor = categoryColor.copy(alpha = 0.15f)
                 )
             }
         }
+    }
+}
+
+private fun getCategoryEmojiString(category: GoalCategory): String {
+    return when (category) {
+        GoalCategory.WATER -> "💧"
+        GoalCategory.EXERCISE -> "🏋️"
+        GoalCategory.READING -> "📚"
+        GoalCategory.STUDY -> "🎓"
+        GoalCategory.MEDICINE -> "💊"
+        GoalCategory.WORK -> "💼"
+        GoalCategory.CUSTOM -> "⭐"
     }
 }
